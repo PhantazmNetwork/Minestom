@@ -3,14 +3,17 @@ package net.minestom.server.collision;
 import net.minestom.server.coordinate.Point;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.UnmodifiableView;
+
+import java.util.List;
 
 @ApiStatus.Experimental
 public interface Shape {
     /**
-     * Returns an {@link Iterable} over the bounding boxes comprising this shape.
-     * @return an Iterable over all bounding boxes making up this shape
+     * Returns a list view of the BoundingBoxes making up this shape.
+     * @return an immutable view of all bounding boxes making up this shape
      */
-    @NotNull Iterable<BoundingBox> boundingBoxes();
+    @UnmodifiableView @NotNull List<BoundingBox> boundingBoxes();
 
     /**
      * Checks if two bounding boxes intersect.

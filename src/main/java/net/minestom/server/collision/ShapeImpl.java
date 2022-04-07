@@ -6,8 +6,10 @@ import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.item.Material;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.UnmodifiableView;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -80,24 +82,8 @@ final class ShapeImpl implements Shape {
     }
 
     @Override
-    public @NotNull Iterable<BoundingBox> boundingBoxes() {
-        return () -> new Iterator<>() {
-            private int index = 0;
-
-            @Override
-            public boolean hasNext() {
-                return index < blockSections.length;
-            }
-
-            @Override
-            public BoundingBox next() {
-                if(index >= blockSections.length) {
-                    throw new NoSuchElementException();
-                }
-
-                return blockSections[index++];
-            }
-        };
+    public @UnmodifiableView @NotNull List<BoundingBox> boundingBoxes() {
+        return List.of(blockSections);
     }
 
     @Override

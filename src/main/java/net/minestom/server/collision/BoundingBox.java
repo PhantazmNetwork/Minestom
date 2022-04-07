@@ -6,8 +6,10 @@ import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.UnmodifiableView;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
@@ -33,25 +35,8 @@ public final class BoundingBox implements Shape {
     }
 
     @Override
-    public @NotNull Iterable<BoundingBox> boundingBoxes() {
-        return () -> new Iterator<>() {
-            private boolean end;
-
-            @Override
-            public boolean hasNext() {
-                return !end;
-            }
-
-            @Override
-            public BoundingBox next() {
-                if(end) {
-                    throw new NoSuchElementException();
-                }
-
-                end = true;
-                return BoundingBox.this;
-            }
-        };
+    public @UnmodifiableView @NotNull List<BoundingBox> boundingBoxes() {
+        return List.of(this);
     }
 
     @Override
