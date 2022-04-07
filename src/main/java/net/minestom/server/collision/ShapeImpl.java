@@ -7,6 +7,8 @@ import net.minestom.server.coordinate.Vec;
 import net.minestom.server.item.Material;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -75,6 +77,27 @@ final class ShapeImpl implements Shape {
     @Override
     public @NotNull Point relativeEnd() {
         return relativeEnd;
+    }
+
+    @Override
+    public @NotNull Iterable<BoundingBox> boundingBoxes() {
+        return () -> new Iterator<>() {
+            private int index = 0;
+
+            @Override
+            public boolean hasNext() {
+                return index < blockSections.length;
+            }
+
+            @Override
+            public BoundingBox next() {
+                if(index >= blockSections.length) {
+                    throw new NoSuchElementException();
+                }
+
+                return blockSections[index++];
+            }
+        };
     }
 
     @Override

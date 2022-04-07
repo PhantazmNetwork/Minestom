@@ -7,6 +7,12 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Experimental
 public interface Shape {
     /**
+     * Returns an {@link Iterable} over the bounding boxes comprising this shape.
+     * @return an Iterable over all bounding boxes making up this shape
+     */
+    @NotNull Iterable<BoundingBox> boundingBoxes();
+
+    /**
      * Checks if two bounding boxes intersect.
      *
      * @param positionRelative Relative position of bounding box to check with

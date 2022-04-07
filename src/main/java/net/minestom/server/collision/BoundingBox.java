@@ -7,6 +7,9 @@ import net.minestom.server.entity.Entity;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 /**
  * See https://wiki.vg/Entity_metadata#Mobs_2
  */
@@ -27,6 +30,28 @@ public final class BoundingBox implements Shape {
 
     public BoundingBox(double width, double height, double depth) {
         this(width, height, depth, new Vec(-width / 2, 0, -depth / 2));
+    }
+
+    @Override
+    public @NotNull Iterable<BoundingBox> boundingBoxes() {
+        return () -> new Iterator<>() {
+            private boolean end;
+
+            @Override
+            public boolean hasNext() {
+                return !end;
+            }
+
+            @Override
+            public BoundingBox next() {
+                if(end) {
+                    throw new NoSuchElementException();
+                }
+
+                end = true;
+                return BoundingBox.this;
+            }
+        };
     }
 
     @Override
