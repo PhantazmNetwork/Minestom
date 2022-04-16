@@ -5,6 +5,7 @@ import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockHandler;
 import net.minestom.server.utils.NamespaceID;
 import net.minestom.server.utils.async.AsyncUtils;
+import net.minestom.server.utils.chunk.ChunkSupplier;
 import net.minestom.server.world.biomes.Biome;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,10 +34,13 @@ public class AnvilLoader implements IChunkLoader {
     private final Path levelPath;
     private final Path regionPath;
 
+    private ChunkSupplier chunkSupplier;
+
     public AnvilLoader(@NotNull Path path) {
         this.path = path;
         this.levelPath = path.resolve("level.dat");
         this.regionPath = path.resolve("region");
+        this.chunkSupplier = DynamicChunk::new;
     }
 
     public AnvilLoader(@NotNull String path) {
@@ -80,7 +84,7 @@ public class AnvilLoader implements IChunkLoader {
         if (fileChunk == null)
             return CompletableFuture.completedFuture(null);
 
-        Chunk chunk = new DynamicChunk(instance, chunkX, chunkZ);
+        Chunk chunk = chunkSupplier.createChunk(instance, chunkX, chunkZ);
         if(fileChunk.getMinY() < instance.getDimensionType().getMinY()) {
             throw new AnvilException(
                     String.format("Trying to load chunk with minY = %d, but instance dimension type (%s) has a minY of %d",
@@ -317,5 +321,13 @@ public class AnvilLoader implements IChunkLoader {
     @Override
     public boolean supportsParallelSaving() {
         return true;
+    }
+
+    public @NotNull ChunkSupplier getChunkSupplier() {
+        return chunkSupplier;
+    }
+
+    public void setChunkSupplier(@NotNull ChunkSupplier chunkSupplier) {
+        this.chunkSupplier = Objects.requireNonNull(chunkSupplier, "chunkSupplier");
     }
 }
