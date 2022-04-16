@@ -8,9 +8,7 @@ import net.minestom.server.item.Material;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnmodifiableView;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -18,6 +16,7 @@ import java.util.regex.Pattern;
 final class ShapeImpl implements Shape {
     private static final Pattern PATTERN = Pattern.compile("\\d.\\d{1,3}", Pattern.MULTILINE);
     private final BoundingBox[] blockSections;
+    private List<BoundingBox> sectionsView;
     private final Point relativeStart, relativeEnd;
     private final Supplier<Material> block;
 
@@ -83,7 +82,8 @@ final class ShapeImpl implements Shape {
 
     @Override
     public @UnmodifiableView @NotNull List<BoundingBox> boundingBoxes() {
-        return List.of(blockSections);
+        return blockSections.length <= 1 ? Collections.emptyList() : (sectionsView == null ? sectionsView = List
+                .of(blockSections) : sectionsView);
     }
 
     @Override
