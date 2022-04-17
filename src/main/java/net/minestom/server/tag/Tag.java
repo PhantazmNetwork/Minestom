@@ -1,5 +1,6 @@
 package net.minestom.server.tag;
 
+import net.kyori.adventure.text.Component;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.utils.collection.IndexMap;
 import org.jetbrains.annotations.ApiStatus;
@@ -14,6 +15,8 @@ import org.jglrxavpok.hephaistos.nbt.mutable.MutableNBTCompound;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -66,6 +69,7 @@ public class Tag<T> {
     static <T> Tag<T> fromSerializer(@NotNull String key, @NotNull TagSerializer<T> serializer) {
         if (serializer instanceof TagRecord.Serializer recordSerializer) {
             // Allow fast retrieval
+            //noinspection unchecked
             return tag(key, recordSerializer.serializerEntry);
         }
         return tag(key, Serializers.fromTagSerializer(serializer));
@@ -173,8 +177,7 @@ public class Tag<T> {
     }
 
     public @Nullable T read(@NotNull NBTCompoundLike nbt) {
-        final String key = this.key;
-        final NBT readable = key.isEmpty() ? nbt.toCompound() : nbt.get(key);
+        final NBT readable = isView() ? nbt.toCompound() : nbt.get(key);
         final T result;
         try {
             if (readable == null || (result = entry.read().apply(readable)) == null)
@@ -185,19 +188,13 @@ public class Tag<T> {
         }
     }
 
-    T createDefault() {
-        final var supplier = defaultValue;
-        return supplier != null ? supplier.get() : null;
-    }
-
     public void write(@NotNull MutableNBTCompound nbtCompound, @Nullable T value) {
-        final String key = this.key;
         if (value != null) {
             final NBT nbt = entry.write().apply(value);
-            if (key.isEmpty()) nbtCompound.copyFrom((NBTCompoundLike) nbt);
+            if (isView()) nbtCompound.copyFrom((NBTCompoundLike) nbt);
             else nbtCompound.set(key, nbt);
         } else {
-            if (key.isEmpty()) nbtCompound.clear();
+            if (isView()) nbtCompound.clear();
             else nbtCompound.remove(key);
         }
     }
@@ -205,6 +202,10 @@ public class Tag<T> {
     public void writeUnsafe(@NotNull MutableNBTCompound nbtCompound, @Nullable Object value) {
         //noinspection unchecked
         write(nbtCompound, (T) value);
+    }
+
+    final boolean isView() {
+        return key.isEmpty();
     }
 
     final boolean shareValue(@NotNull Tag<?> other) {
@@ -215,8 +216,35 @@ public class Tag<T> {
         return this.readComparator == other.readComparator;
     }
 
+    final T createDefault() {
+        final Supplier<T> supplier = defaultValue;
+        return supplier != null ? supplier.get() : null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Tag<?> tag)) return false;
+        return index == tag.index &&
+                listScope == tag.listScope &&
+                readComparator.equals(tag.readComparator) &&
+                Objects.equals(defaultValue, tag.defaultValue) &&
+                Arrays.equals(path, tag.path) && Objects.equals(copy, tag.copy);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(index, readComparator, defaultValue, copy, listScope);
+        result = 31 * result + Arrays.hashCode(path);
+        return result;
+    }
+
     public static @NotNull Tag<Byte> Byte(@NotNull String key) {
         return tag(key, Serializers.BYTE);
+    }
+
+    public static @NotNull Tag<Boolean> Boolean(@NotNull String key) {
+        return tag(key, Serializers.BOOLEAN);
     }
 
     public static @NotNull Tag<Short> Short(@NotNull String key) {
@@ -243,16 +271,32 @@ public class Tag<T> {
         return tag(key, Serializers.STRING);
     }
 
-    public static <T extends NBT> @NotNull Tag<T> NBT(@NotNull String key) {
-        return tag(key, (Serializers.Entry<T, ? extends NBT>) Serializers.NBT_ENTRY);
+    @ApiStatus.Experimental
+    public static @NotNull Tag<UUID> UUID(@NotNull String key) {
+        return tag(key, Serializers.UUID);
     }
 
     public static @NotNull Tag<ItemStack> ItemStack(@NotNull String key) {
         return tag(key, Serializers.ITEM);
     }
 
+    public static @NotNull Tag<Component> Component(@NotNull String key) {
+        return tag(key, Serializers.COMPONENT);
+    }
+
     /**
-     * Create a wrapper around a compound.
+     * Creates a flexible tag able to read and write any {@link NBT} objects.
+     * <p>
+     * Specialized tags are recommended if the type is known as conversion will be required both way (read and write).
+     */
+    public static @NotNull Tag<NBT> NBT(@NotNull String key) {
+        return tag(key, Serializers.NBT_ENTRY);
+    }
+
+    /**
+     * Creates a tag containing multiple fields.
+     * <p>
+     * Those fields cannot be modified from an outside tag. (This is to prevent the backed object from becoming out of sync)
      *
      * @param key        the tag key
      * @param serializer the tag serializer
@@ -263,6 +307,11 @@ public class Tag<T> {
         return fromSerializer(key, serializer);
     }
 
+    /**
+     * Specialized Structure tag affecting the src of the handler (i.e. overwrite all its data).
+     * <p>
+     * Must be used with care.
+     */
     public static <T> @NotNull Tag<T> View(@NotNull TagSerializer<T> serializer) {
         return Structure("", serializer);
     }
