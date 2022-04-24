@@ -40,6 +40,17 @@ public final class VelocityProxy {
     }
 
     /**
+     * Enables velocity modern forwarding, using the provided byte array instead of a string secret. This allows the
+     * bytes to be cleared after use, rather than keeping them in memory longer than is necessary, as is generally
+     * recommended for secure password handling
+     * @param secret the byte array to be used as a secret
+     */
+    public static void enable(byte[] secret) {
+        VelocityProxy.enabled = true;
+        VelocityProxy.key = new SecretKeySpec(secret, MAC_ALGORITHM);
+    }
+
+    /**
      * Gets if velocity modern forwarding is enabled.
      *
      * @return true if velocity modern forwarding is enabled
