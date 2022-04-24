@@ -557,13 +557,10 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         if (!hasVelocity && noGravity) {
             return;
         }
+
         final float tps = MinecraftServer.TICK_PER_SECOND;
         final Vec currentVelocity = getVelocity();
-        final Vec deltaPos = new Vec(
-                currentVelocity.x() / tps,
-                currentVelocity.y() / tps - (noGravity ? 0 : gravityAcceleration),
-                currentVelocity.z() / tps
-        );
+        final Vec deltaPos = currentVelocity.div(tps).sub(0, noGravity ? 0 : gravityAcceleration, 0);
 
         final Pos newPosition;
         final Vec newVelocity;
