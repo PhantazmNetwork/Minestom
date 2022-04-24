@@ -28,10 +28,13 @@ public final class PlayerDiggingListener {
 
         DiggingResult diggingResult = null;
         if (status == ClientPlayerDiggingPacket.Status.STARTED_DIGGING) {
+            if (!instance.isChunkLoaded(blockPosition)) return;
             diggingResult = startDigging(player, instance, blockPosition);
         } else if (status == ClientPlayerDiggingPacket.Status.CANCELLED_DIGGING) {
+            if (!instance.isChunkLoaded(blockPosition)) return;
             diggingResult = cancelDigging(instance, blockPosition);
         } else if (status == ClientPlayerDiggingPacket.Status.FINISHED_DIGGING) {
+            if (!instance.isChunkLoaded(blockPosition)) return;
             diggingResult = finishDigging(player, instance, blockPosition);
         } else if (status == ClientPlayerDiggingPacket.Status.DROP_ITEM_STACK) {
             dropStack(player);
@@ -60,7 +63,7 @@ public final class PlayerDiggingListener {
         } else if (gameMode == GameMode.ADVENTURE) {
             // Check if the item can break the block with the current item
             final ItemStack itemInMainHand = player.getItemInMainHand();
-            if (!itemInMainHand.getMeta().getCanDestroy().contains(block)) {
+            if (!itemInMainHand.meta().getCanDestroy().contains(block)) {
                 return new DiggingResult(block, false);
             }
         } else if (gameMode == GameMode.CREATIVE) {
@@ -166,13 +169,6 @@ public final class PlayerDiggingListener {
         }
     }
 
-    private static final class DiggingResult {
-        public final Block block;
-        public final boolean success;
-
-        public DiggingResult(Block block, boolean success) {
-            this.block = block;
-            this.success = success;
-        }
+    private record DiggingResult(Block block, boolean success) {
     }
 }
