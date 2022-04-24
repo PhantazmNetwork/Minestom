@@ -581,7 +581,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         final Pos finalVelocityPosition = CollisionUtils.applyWorldBorder(instance, position, newPosition);
         final boolean positionChanged = !finalVelocityPosition.samePoint(position);
         if (!positionChanged) {
-            if (hasVelocity || newVelocity.isZero()) {
+            if (!onGround && (hasVelocity || newVelocity.isZero())) {
                 this.velocity = noGravity ? Vec.ZERO : new Vec(
                         0,
                         -gravityAcceleration * tps * (1 - gravityDragPerTick),
@@ -634,7 +634,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
                 // Apply drag
                 .apply((x, y, z) -> new Vec(
                         x * drag,
-                        !hasNoGravity() ? (y - gravityAcceleration) * (1 - gravityDragPerTick) : y,
+                        hasNoGravity() || wasOnGround ? y : (y - gravityAcceleration) * (1 - gravityDragPerTick),
                         z * drag
                 ))
                 // Convert from block/tick to block/sec
