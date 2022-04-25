@@ -613,7 +613,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         }
 
         //send packets if needed
-        if(!isPlayer && hasVelocity()) {
+        if(!isPlayer) {
             sendPacketsToViewers(getVelocityPacket());
         }
     }
