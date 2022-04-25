@@ -557,7 +557,6 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         gravityTickCount = onGround ? 0 : gravityTickCount + 1;
 
         boolean hasGravity = !hasNoGravity();
-        boolean wasOnGround = onGround;
         boolean isPlayer = PlayerUtils.isSocketClient(this);
 
         if(!hasVelocity() && !hasGravity) {
@@ -569,7 +568,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         int tps = MinecraftServer.TICK_PER_SECOND;
 
         Vec currentVelocity = getVelocity(); //blocks/s
-        Vec deltaPos = currentVelocity.div(tps); //blocks/t
+        Vec deltaPos = applyGravityAndDrag(hasGravity, currentVelocity.div(tps)); //blocks/t
 
         Pos newPos;
         Vec newVelocity; //blocks/t
@@ -577,7 +576,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
             //perform block collisions
             PhysicsResult result = CollisionUtils.handlePhysics(this, deltaPos);
             if(!isPlayer) {
-                onGround = result.isOnGround();
+                onGround = Math.abs(result.newVelocity().y()) < Vec.EPSILON;
             }
 
             newPos = result.newPosition();
@@ -589,9 +588,10 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
             newVelocity = deltaPos;
         }
 
+        velocity = newVelocity.mul(tps);
+
         //finally, apply world border collision
         Pos finalPos = CollisionUtils.applyWorldBorder(instance, position, newPos);
-        velocity = applyGravityAndDrag(wasOnGround, hasGravity, newVelocity, tps);
 
         //don't update entity if moving into an unloaded chunk
         Chunk newChunk = ChunkUtils.retrieve(instance, currentChunk, finalPos);
@@ -618,12 +618,12 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         }
     }
 
-    //return value is in blocks/s, newVelocity is in blocks/t
-    private Vec applyGravityAndDrag(boolean wasOnGround, boolean hasGravity, Vec newVelocity, int tps) {
+    //return value is in blocks/t, newVelocity is in blocks/t
+    private Vec applyGravityAndDrag(boolean hasGravity, Vec currentVelocity) {
         EntitySpawnType type = entityType.registry().spawnType();
         double airDrag = type == EntitySpawnType.LIVING || type == EntitySpawnType.PLAYER ? 0.91 : 0.98;
         double drag;
-        if(wasOnGround) {
+        if(onGround) {
             Chunk chunk = ChunkUtils.retrieve(instance, currentChunk, position);
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (chunk) {
@@ -635,11 +635,11 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
             drag = airDrag;
         }
 
-        return newVelocity.apply((x, y, z) -> new Vec(
+        return currentVelocity.apply((x, y, z) -> new Vec(
                 x * drag,
-                hasGravity && !onGround ? (y - gravityAcceleration) * (1 - gravityDragPerTick) : y,
+                hasGravity ? (y - gravityAcceleration) * (1 - gravityDragPerTick) : y,
                 z * drag
-        )).mul(tps).apply(Vec.Operator.EPSILON);
+        )).apply(Vec.Operator.EPSILON);
     }
 
     private void touchTick() {
@@ -891,7 +891,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     }
 
     /**
-     * Changes the entity velocity and calls {@link EntityVelocityEvent}.
+     * Changes the entity velocity and calls {@link EntityVelocityEvent}, measured in blocks/sec
      * <p>
      * The final velocity can be cancelled or modified by the event.
      *
