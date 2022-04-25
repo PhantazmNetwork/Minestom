@@ -559,6 +559,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         boolean hasGravity = !hasNoGravity();
         boolean wasOnGround = onGround;
         boolean isPlayer = PlayerUtils.isSocketClient(this);
+
         if(!hasVelocity() && !hasGravity) {
             //if we have no velocity and no gravity, don't update
             return;
@@ -617,7 +618,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         }
     }
 
-    //return value is in blocks/s
+    //return value is in blocks/s, newVelocity is in blocks/t
     private Vec applyGravityAndDrag(boolean wasOnGround, boolean hasGravity, Vec newVelocity, int tps) {
         EntitySpawnType type = entityType.registry().spawnType();
         double airDrag = type == EntitySpawnType.LIVING || type == EntitySpawnType.PLAYER ? 0.91 : 0.98;

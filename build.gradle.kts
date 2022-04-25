@@ -5,7 +5,7 @@ plugins {
 }
 
 allprojects {
-    group = "net.minestom.server"
+    group = "com.github.PhantazmNetwork"
     version = "1.0"
     description = "Lightweight and multi-threaded Minecraft server implementation"
 }
