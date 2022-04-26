@@ -83,7 +83,7 @@ final class ShapeImpl implements Shape {
     }
 
     @Override
-    public @UnmodifiableView @NotNull List<BoundingBox> boundingBoxes() {
+    public @UnmodifiableView @NotNull List<BoundingBox> childBounds() {
         return blockSections.length <= 1 ? Collections.emptyList() : (sectionsView == null ? sectionsView = List
                 .of(blockSections) : sectionsView);
     }

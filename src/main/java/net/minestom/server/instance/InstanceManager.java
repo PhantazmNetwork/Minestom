@@ -1,6 +1,8 @@
 package net.minestom.server.instance;
 
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.event.instance.InstanceRegisterEvent;
+import net.minestom.server.event.instance.InstanceUnregisterEvent;
 import net.minestom.server.utils.validate.Check;
 import net.minestom.server.world.DimensionType;
 import org.jetbrains.annotations.ApiStatus;
@@ -119,6 +121,7 @@ public final class InstanceManager {
             instance.setRegistered(false);
             this.instances.remove(instance);
         }
+        MinecraftServer.getGlobalEventHandler().call(new InstanceUnregisterEvent(instance));
     }
 
     /**
@@ -156,5 +159,6 @@ public final class InstanceManager {
         this.instances.add(instance);
         var dispatcher = MinecraftServer.process().dispatcher();
         instance.getChunks().forEach(dispatcher::createPartition);
+        MinecraftServer.getGlobalEventHandler().call(new InstanceRegisterEvent(instance));
     }
 }

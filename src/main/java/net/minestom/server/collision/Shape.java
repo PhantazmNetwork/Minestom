@@ -10,11 +10,11 @@ import java.util.List;
 @ApiStatus.Experimental
 public interface Shape {
     /**
-     * Returns a list view of the BoundingBoxes making up this shape. If this shape does not have "child" bounding
+     * Returns a list view of the BoundingBoxes making up this shape. If this shape does not have any "child" bounding
      * boxes, this list will be empty.
      * @return an immutable view of all bounding boxes making up this shape
      */
-    @UnmodifiableView @NotNull List<BoundingBox> boundingBoxes();
+    @UnmodifiableView @NotNull List<BoundingBox> childBounds();
 
     /**
      * Checks if two bounding boxes intersect.
