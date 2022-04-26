@@ -574,7 +574,8 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         Vec newVelocity; //blocks/t
         if(hasPhysics) {
             //perform block collisions
-            PhysicsResult result = CollisionUtils.handlePhysics(this, deltaPos);
+            PhysicsResult result = CollisionUtils.handlePhysics(this, deltaPos, lastPhysicsResult);
+            lastPhysicsResult = result;
             if(!isPlayer) {
                 onGround = Math.abs(result.newVelocity().y()) < Vec.EPSILON;
             }
@@ -618,7 +619,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         }
     }
 
-    //return value is in blocks/t, newVelocity is in blocks/t
+    //return value is in blocks/t, curentVelocity is in blocks/t
     private Vec applyGravityAndDrag(boolean hasGravity, Vec currentVelocity) {
         EntitySpawnType type = entityType.registry().spawnType();
         double airDrag = type == EntitySpawnType.LIVING || type == EntitySpawnType.PLAYER ? 0.91 : 0.98;
@@ -627,8 +628,8 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
             Chunk chunk = ChunkUtils.retrieve(instance, currentChunk, position);
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (chunk) {
-                drag = chunk.getBlock(position.sub(0, 0.5000001, 0), Block.Getter.Condition.TYPE).registry()
-                        .friction() * airDrag;
+                drag = chunk.getBlock(position.sub(0, 0.5 + Vec.EPSILON, 0), Block.Getter.Condition.TYPE)
+                        .registry().friction() * airDrag;
             }
         }
         else {
