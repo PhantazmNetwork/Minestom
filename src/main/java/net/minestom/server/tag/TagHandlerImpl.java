@@ -9,9 +9,11 @@ import org.jetbrains.annotations.UnknownNullability;
 import org.jglrxavpok.hephaistos.nbt.NBT;
 import org.jglrxavpok.hephaistos.nbt.NBTCompound;
 import org.jglrxavpok.hephaistos.nbt.NBTCompoundLike;
+import org.jglrxavpok.hephaistos.nbt.NBTType;
 import org.jglrxavpok.hephaistos.nbt.mutable.MutableNBTCompound;
 
 import java.lang.invoke.VarHandle;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 final class TagHandlerImpl implements TagHandler {
@@ -40,32 +42,48 @@ final class TagHandlerImpl implements TagHandler {
 
     @Override
     public <T> @UnknownNullability T getTag(@NotNull Tag<T> tag) {
-        if (tag.isView()) return tag.read(asCompound());
-        return read(entries, tag);
+        return read(entries, tag, this::asCompound);
     }
 
     @Override
     public <T> void setTag(@NotNull Tag<T> tag, @Nullable T value) {
-        if (tag.isView()) {
-            MutableNBTCompound viewCompound = new MutableNBTCompound();
-            tag.write(viewCompound, value);
-            updateContent(viewCompound);
-        } else {
-            final int tagIndex = tag.index;
-            final Tag.PathEntry[] paths = tag.path;
-            final boolean present = value != null;
-            TagHandlerImpl local = this;
-            synchronized (this) {
-                if (paths != null) {
-                    if ((local = traversePathWrite(this, tagIndex, paths, present)) == null)
-                        return;
-                }
-                SPMCMap entries = local.entries;
-                if (present) entries.put(tagIndex, valueToEntry(local, tag, value));
-                else entries.remove(tagIndex);
-                entries.invalidate();
-                assert !local.entries.rehashed;
+        TagHandlerImpl local = this;
+        final Tag.PathEntry[] paths = tag.path;
+        final boolean present = value != null;
+        final int tagIndex = tag.index;
+        final boolean isView = tag.isView();
+        synchronized (this) {
+            if (paths != null) {
+                if ((local = traversePathWrite(this, paths, present)) == null)
+                    return; // Tried to remove an absent tag. Do nothing
             }
+            SPMCMap entries = local.entries;
+            if (present) {
+                if (!isView) {
+                    entries.put(tagIndex, valueToEntry(local, tag, value));
+                } else {
+                    local.updateContent((NBTCompound) tag.entry.write(value));
+                    return;
+                }
+            } else {
+                // Remove recursively
+                if (!isView) {
+                    if (entries.remove(tagIndex) == null) return;
+                } else {
+                    entries.clear();
+                }
+                if (paths != null) {
+                    TagHandlerImpl tmp = local;
+                    int i = paths.length;
+                    do {
+                        if (!tmp.entries.isEmpty()) break;
+                        tmp = tmp.parent;
+                        tmp.entries.remove(paths[--i].index());
+                    } while (i > 0);
+                }
+            }
+            entries.invalidate();
+            assert !local.entries.rehashed;
         }
     }
 
@@ -84,6 +102,25 @@ final class TagHandlerImpl implements TagHandler {
             if (copy != null) value = copy.apply(value);
             return new TagEntry<>(tag, value);
         }
+    }
+
+    @Override
+    public synchronized <T> void updateTag(@NotNull Tag<T> tag, @NotNull UnaryOperator<@UnknownNullability T> value) {
+        setTag(tag, value.apply(getTag(tag)));
+    }
+
+    @Override
+    public synchronized <T> @UnknownNullability T updateAndGetTag(@NotNull Tag<T> tag, @NotNull UnaryOperator<@UnknownNullability T> value) {
+        final T next = value.apply(getTag(tag));
+        setTag(tag, next);
+        return next;
+    }
+
+    @Override
+    public synchronized <T> @UnknownNullability T getAndUpdateTag(@NotNull Tag<T> tag, @NotNull UnaryOperator<@UnknownNullability T> value) {
+        final T prev = getTag(tag);
+        setTag(tag, value.apply(prev));
+        return prev;
     }
 
     @Override
@@ -110,13 +147,10 @@ final class TagHandlerImpl implements TagHandler {
         return updatedCache().compound;
     }
 
-    private static TagHandlerImpl traversePathWrite(TagHandlerImpl root, int tagIndex,
-                                                    Tag.PathEntry[] paths, boolean present) {
-        final int length = paths.length;
+    private static TagHandlerImpl traversePathWrite(TagHandlerImpl root, Tag.PathEntry[] paths,
+                                                    boolean present) {
         TagHandlerImpl local = root;
-        TagHandlerImpl[] pathHandlers = new TagHandlerImpl[length];
-        for (int i = 0; i < length; i++) {
-            final Tag.PathEntry path = paths[i];
+        for (Tag.PathEntry path : paths) {
             final int pathIndex = path.index();
             final Entry<?> entry = local.entries.get(pathIndex);
             if (entry instanceof PathEntry pathEntry) {
@@ -134,28 +168,6 @@ final class TagHandlerImpl implements TagHandler {
                 }
                 tmp.entries.put(pathIndex, new PathEntry(path.name(), local));
             }
-            pathHandlers[i] = local;
-        }
-        // Handle removal if the tag was present (recursively)
-        if (!present) {
-            // Remove entry
-            TagHandlerImpl targetHandler = pathHandlers[length - 1];
-            if (targetHandler.entries.remove(tagIndex) == null) return null;
-            // Clear empty parents
-            for (int i = length - 1; i >= 0; i--) {
-                final TagHandlerImpl handler = pathHandlers[i];
-                if (!handler.entries.isEmpty()) break;
-                final int pathIndex = paths[i].index();
-                if (i == 0) {
-                    // Remove the root handler
-                    root.entries.remove(pathIndex);
-                } else {
-                    TagHandlerImpl parent = pathHandlers[i - 1];
-                    parent.entries.remove(pathIndex);
-                }
-            }
-            targetHandler.entries.invalidate();
-            return null;
         }
         return local;
     }
@@ -176,13 +188,21 @@ final class TagHandlerImpl implements TagHandler {
         return cache;
     }
 
-    private static <T> T read(Int2ObjectOpenHashMap<Entry<?>> entries, Tag<T> tag) {
+    private static <T> T read(Int2ObjectOpenHashMap<Entry<?>> entries, Tag<T> tag,
+                              Supplier<NBTCompound> rootCompoundSupplier) {
         final Tag.PathEntry[] paths = tag.path;
+        TagHandlerImpl pathHandler = null;
         if (paths != null) {
-            // Must be a path-able entry
-            if ((entries = traversePathRead(paths, entries)) == null)
-                return tag.createDefault();
+            if ((pathHandler = traversePathRead(paths, entries)) == null)
+                return tag.createDefault(); // Must be a path-able entry, but not present
+            entries = pathHandler.entries;
         }
+
+        if (tag.isView()) {
+            return tag.read(pathHandler != null ?
+                    pathHandler.asCompound() : rootCompoundSupplier.get());
+        }
+
         final Entry<?> entry;
         if ((entry = entries.get(tag.index)) == null) {
             return tag.createDefault();
@@ -196,29 +216,33 @@ final class TagHandlerImpl implements TagHandler {
         // Value must be parsed from nbt if the tag is different
         final NBT nbt = entry.updatedNbt();
         final Serializers.Entry<T, NBT> serializerEntry = tag.entry;
-        return serializerEntry.nbtType().isAssignableFrom(nbt.getClass()) ?
-                serializerEntry.read(nbt) : tag.createDefault();
+        final NBTType<NBT> type = serializerEntry.nbtType();
+        return type == null || type == nbt.getID() ? serializerEntry.read(nbt) : tag.createDefault();
     }
 
-    private static Int2ObjectOpenHashMap<Entry<?>> traversePathRead(Tag.PathEntry[] paths,
-                                                                    Int2ObjectOpenHashMap<Entry<?>> entries) {
+    private static TagHandlerImpl traversePathRead(Tag.PathEntry[] paths,
+                                                   Int2ObjectOpenHashMap<Entry<?>> entries) {
+        assert paths != null && paths.length > 0;
+        TagHandlerImpl result = null;
         for (var path : paths) {
             final Entry<?> entry;
             if ((entry = entries.get(path.index())) == null)
                 return null;
             if (entry instanceof PathEntry pathEntry) {
-                entries = pathEntry.value.entries;
+                result = pathEntry.value;
             } else if (entry.updatedNbt() instanceof NBTCompound compound) {
                 // Slow path forcing a conversion of the structure to NBTCompound
                 // TODO should the handler be cached inside the entry?
-                TagHandlerImpl tmp = fromCompound(compound);
-                entries = tmp.entries;
+                result = fromCompound(compound);
             } else {
                 // Entry is not path-able
                 return null;
             }
+            assert result != null;
+            entries = result.entries;
         }
-        return entries;
+        assert result != null;
+        return result;
     }
 
     private record Cache(Int2ObjectOpenHashMap<Entry<?>> entries, NBTCompound compound) implements TagReadable {
@@ -226,8 +250,7 @@ final class TagHandlerImpl implements TagHandler {
 
         @Override
         public <T> @UnknownNullability T getTag(@NotNull Tag<T> tag) {
-            if (tag.isView()) return tag.read(compound);
-            return read(entries, tag);
+            return read(entries, tag, () -> compound);
         }
     }
 
