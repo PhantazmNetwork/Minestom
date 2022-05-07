@@ -265,7 +265,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     }
 
     public boolean isOnGround() {
-        return onGround || EntityUtils.isOnGround(this) /* backup for levitating entities */;
+        return onGround;
     }
 
     /**
@@ -586,7 +586,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
             PhysicsResult result = CollisionUtils.handlePhysics(this, deltaPos, lastPhysicsResult);
             lastPhysicsResult = result;
             if(!isPlayer) {
-                onGround = Math.abs(result.newVelocity().y()) < Vec.EPSILON;
+                onGround = onGround ? Math.abs(result.newVelocity().y()) < Vec.EPSILON : result.isOnGround();
             }
 
             newPos = result.newPosition();
