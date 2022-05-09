@@ -928,7 +928,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
      * @return true if the entity is moving
      */
     public boolean hasVelocity() {
-        return velocity.isZero();
+        return !velocity.isZero();
     }
 
     /**
