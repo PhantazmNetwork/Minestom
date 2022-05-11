@@ -399,7 +399,8 @@ final class BlockCollision {
                         | (currentCollidable && currentShape.intersectBoxSwept(entityPosition, entityVelocity,
                         currentPos, boundingBox, finalResult));
             else return currentCollidable && currentShape.intersectBoxSwept(entityPosition, entityVelocity, currentPos,
-                    boundingBox, finalResult);
+                        boundingBox, finalResult);
+
         }
 
         if(currentCollidable && currentShape.intersectBoxSwept(entityPosition, entityVelocity,
