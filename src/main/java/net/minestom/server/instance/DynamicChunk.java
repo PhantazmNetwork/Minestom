@@ -126,6 +126,19 @@ public class DynamicChunk extends Chunk {
     @Override
     public @Nullable Block getBlock(int x, int y, int z, @NotNull Condition condition) {
         assertLock();
+        return getBlock_UNSAFE(x, y, z, condition);
+    }
+
+    /**
+     * Unsafe version of {@link DynamicChunk#getBlock(int, int, int, Condition)} that does not ensure a lock is held on
+     * the chunk.
+     * @param x the x-coordinate of the block
+     * @param y the y-coordinate of the block
+     * @param z the z-coordinate of the block
+     * @param condition the condition used to potentially optimize block retrieval
+     * @return the block at the given coordinate
+     */
+    protected Block getBlock_UNSAFE(int x, int y, int z, @NotNull Condition condition) {
         if (y < minSection * CHUNK_SECTION_SIZE || y >= maxSection * CHUNK_SECTION_SIZE)
             return Block.AIR; // Out of bounds
 

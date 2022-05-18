@@ -7,6 +7,7 @@ import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.EventDispatcher;
+import net.minestom.server.event.instance.BlockChangeEvent;
 import net.minestom.server.event.instance.InstanceChunkLoadEvent;
 import net.minestom.server.event.instance.InstanceChunkUnloadEvent;
 import net.minestom.server.event.player.PlayerBlockBreakEvent;
@@ -160,6 +161,8 @@ public class InstanceContainer extends Instance {
                 handler.onPlace(Objects.requireNonNullElseGet(placement,
                         () -> new BlockHandler.Placement(finalBlock, this, blockPosition)));
             }
+
+            EventDispatcher.call(new BlockChangeEvent(blockPosition, previousBlock, block, this));
         }
     }
 
