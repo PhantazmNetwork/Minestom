@@ -558,107 +558,99 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     protected void preTick(long time) {}
 
     private void velocityTick() {
-        this.gravityTickCount = onGround ? 0 : gravityTickCount + 1;
-        if (vehicle != null) return;
-
-        final boolean noGravity = hasNoGravity();
-        final boolean hasVelocity = hasVelocity();
-        if (!hasVelocity && noGravity) {
+        //no velocity for entities riding others
+        if(vehicle != null) {
             return;
         }
-        final float tps = MinecraftServer.TICK_PER_SECOND;
-        final Pos positionBeforeMove = getPosition();
-        final Vec currentVelocity = getVelocity();
-        final boolean wasOnGround = this.onGround;
-        final Vec deltaPos = currentVelocity.div(tps);
 
-        final Pos newPosition;
-        final Vec newVelocity;
-        if (this.hasPhysics) {
-            final var physicsResult = CollisionUtils.handlePhysics(this, deltaPos, lastPhysicsResult);
-            this.lastPhysicsResult = physicsResult;
-            if (!PlayerUtils.isSocketClient(this))
-                this.onGround = physicsResult.isOnGround();
+        //increment gravityTickCount
+        gravityTickCount = onGround ? 0 : gravityTickCount + 1;
 
-            newPosition = physicsResult.newPosition();
-            newVelocity = physicsResult.newVelocity();
-        } else {
+        boolean hasGravity = !hasNoGravity();
+        boolean isPlayer = PlayerUtils.isSocketClient(this);
+
+        if(!hasVelocity() && !hasGravity) {
+            //if we have no velocity and no gravity, don't update
+            return;
+        }
+
+        //server TPS
+        int tps = MinecraftServer.TICK_PER_SECOND;
+
+        Vec currentVelocity = getVelocity(); //blocks/s
+        Vec deltaPos = applyGravityAndDrag(hasGravity, currentVelocity.div(tps)); //blocks/t
+
+        Pos newPos;
+        Vec newVelocity; //blocks/t
+        if(hasPhysics) {
+            //perform block collisions
+            PhysicsResult result = CollisionUtils.handlePhysics(this, deltaPos, lastPhysicsResult);
+            lastPhysicsResult = result;
+            if(!isPlayer) {
+                onGround = onGround ? Math.abs(result.newVelocity().y()) < Vec.EPSILON : result.isOnGround();
+            }
+
+            newPos = result.newPosition();
+            newVelocity = result.newVelocity();
+        }
+        else {
+            //this entity doesn't have any physics so ignore blocks
+            newPos = position.add(deltaPos);
             newVelocity = deltaPos;
-            newPosition = position.add(currentVelocity.div(20));
         }
 
-        // World border collision
-        final Pos finalVelocityPosition = CollisionUtils.applyWorldBorder(instance, position, newPosition);
-        final boolean positionChanged = !finalVelocityPosition.samePoint(position);
-        final boolean isPlayer = this instanceof Player;
-        final boolean flying = isPlayer && ((Player) this).isFlying();
-        if (!positionChanged) {
-            if (flying) {
-                this.velocity = Vec.ZERO;
-                return;
-            } else if (hasVelocity || newVelocity.isZero()) {
-                this.velocity = noGravity ? Vec.ZERO : new Vec(
-                        0,
-                        -gravityAcceleration * tps * (1 - gravityDragPerTick),
-                        0
-                );
-                if (!isPlayer) sendPacketToViewers(getVelocityPacket());
-                return;
-            }
-        }
-        final Chunk finalChunk = ChunkUtils.retrieve(instance, currentChunk, finalVelocityPosition);
-        if (!ChunkUtils.isLoaded(finalChunk)) {
-            // Entity shouldn't be updated when moving in an unloaded chunk
+        velocity = newVelocity.mul(tps);
+
+        //finally, apply world border collision
+        Pos finalPos = CollisionUtils.applyWorldBorder(instance, position, newPos);
+
+        //don't update entity if moving into an unloaded chunk
+        Chunk newChunk = ChunkUtils.retrieve(instance, currentChunk, finalPos);
+        if(!ChunkUtils.isLoaded(newChunk)) {
             return;
         }
 
-        if (positionChanged) {
+        //update entity position or coordinate if necessary
+        boolean positionChanged = !finalPos.samePoint(position);
+        if(positionChanged) {
             if (entityType == EntityTypes.ITEM || entityType == EntityType.FALLING_BLOCK) {
-                // TODO find other exceptions
-                this.previousPosition = this.position;
-                this.position = finalVelocityPosition;
-                refreshCoordinate(finalVelocityPosition);
-            } else {
-                if (!PlayerUtils.isSocketClient(this))
-                    refreshPosition(finalVelocityPosition, true);
+                previousPosition = position;
+                position = finalPos;
+                refreshCoordinate(finalPos);
+            }
+            else if (!isPlayer) {
+                refreshPosition(finalPos, true);
             }
         }
 
-        // Update velocity
-        if (hasVelocity || !newVelocity.isZero()) {
-            updateVelocity(wasOnGround, flying, positionBeforeMove, newVelocity);
-        }
-        // Verify if velocity packet has to be sent
-        if (!isPlayer && (hasVelocity || gravityTickCount > 0)) {
-            sendPacketToViewers(getVelocityPacket());
+        //send packets if needed
+        if(!isPlayer) {
+            sendPacketsToViewers(getVelocityPacket());
         }
     }
 
-    protected void updateVelocity(boolean wasOnGround, boolean flying, Pos positionBeforeMove, Vec newVelocity) {
+    //return value is in blocks/t, curentVelocity is in blocks/t
+    private Vec applyGravityAndDrag(boolean hasGravity, Vec currentVelocity) {
         EntitySpawnType type = entityType.registry().spawnType();
-        final double airDrag = type == EntitySpawnType.LIVING || type == EntitySpawnType.PLAYER ? 0.91 : 0.98;
-        final double drag;
-        if (wasOnGround) {
-            final Chunk chunk = ChunkUtils.retrieve(instance, currentChunk, position);
+        double airDrag = type == EntitySpawnType.LIVING || type == EntitySpawnType.PLAYER ? 0.91 : 0.98;
+        double drag;
+        if(onGround) {
+            Chunk chunk = ChunkUtils.retrieve(instance, currentChunk, position);
+            //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (chunk) {
-                drag = chunk.getBlock(positionBeforeMove.sub(0, 0.5000001, 0)).registry().friction() * airDrag;
+                drag = chunk.getBlock(position.sub(0, 0.5 + Vec.EPSILON, 0), Block.Getter.Condition.TYPE)
+                        .registry().friction() * airDrag;
             }
-        } else drag = airDrag;
+        }
+        else {
+            drag = airDrag;
+        }
 
-        double gravity = flying ? 0 : gravityAcceleration;
-        double gravityDrag = flying ? 0.6 : (1 - gravityDragPerTick);
-
-        this.velocity = newVelocity
-                // Apply gravity and drag
-                .apply((x, y, z) -> new Vec(
-                        x * drag,
-                        !hasNoGravity() ? (y - gravity) * gravityDrag : y,
-                        z * drag
-                ))
-                // Convert from block/tick to block/sec
-                .mul(MinecraftServer.TICK_PER_SECOND)
-                // Prevent infinitely decreasing velocity
-                .apply(Vec.Operator.EPSILON);
+        return currentVelocity.apply((x, y, z) -> new Vec(
+                x * drag,
+                hasGravity ? (y - gravityAcceleration) * (1 - gravityDragPerTick) : y,
+                z * drag
+        )).apply(Vec.Operator.EPSILON);
     }
 
     private void touchTick() {
