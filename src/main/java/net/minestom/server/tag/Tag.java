@@ -2,7 +2,7 @@ package net.minestom.server.tag;
 
 import net.kyori.adventure.text.Component;
 import net.minestom.server.item.ItemStack;
-import net.minestom.server.utils.collection.IndexMap;
+import net.minestom.server.utils.collection.AutoIncrementMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -30,7 +30,7 @@ import java.util.function.UnaryOperator;
  */
 @ApiStatus.NonExtendable
 public class Tag<T> {
-    private static final IndexMap<String> INDEX_MAP = new IndexMap<>();
+    private static final AutoIncrementMap<String> INDEX_MAP = new AutoIncrementMap<>();
 
     record PathEntry(String name, int index) {
     }
@@ -208,6 +208,11 @@ public class Tag<T> {
     final T createDefault() {
         final Supplier<T> supplier = defaultValue;
         return supplier != null ? supplier.get() : null;
+    }
+
+    final T copyValue(@NotNull T value) {
+        final UnaryOperator<T> copier = copy;
+        return copier != null ? copier.apply(value) : value;
     }
 
     @Override

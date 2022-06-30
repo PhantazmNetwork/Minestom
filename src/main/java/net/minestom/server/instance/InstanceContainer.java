@@ -342,7 +342,6 @@ public class InstanceContainer extends Instance {
                     MinecraftServer.getExceptionManager().handleException(e);
                 } finally {
                     // End generation
-                    chunk.sendChunk();
                     refreshLastBlockChangeTime();
                     resultFuture.complete(chunk);
                 }
@@ -575,7 +574,7 @@ public class InstanceContainer extends Instance {
      */
     private boolean isAlreadyChanged(@NotNull Point blockPosition, @NotNull Block block) {
         final Block changedBlock = currentlyChangingBlocks.get(blockPosition);
-        return changedBlock != null && changedBlock.id() == block.id();
+        return Objects.equals(changedBlock, block);
     }
 
     /**
