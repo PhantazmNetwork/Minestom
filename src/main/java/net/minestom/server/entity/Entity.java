@@ -566,8 +566,8 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         //increment gravityTickCount
         gravityTickCount = onGround ? 0 : gravityTickCount + 1;
 
-        boolean hasGravity = !hasNoGravity();
-        boolean isPlayer = PlayerUtils.isSocketClient(this);
+        final boolean hasGravity = !hasNoGravity();
+        final boolean isPlayer = PlayerUtils.isSocketClient(this);
 
         if(!hasVelocity() && !hasGravity) {
             //if we have no velocity and no gravity, don't update
@@ -575,13 +575,13 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         }
 
         //server TPS
-        int tps = MinecraftServer.TICK_PER_SECOND;
+        final int tps = MinecraftServer.TICK_PER_SECOND;
 
-        Vec currentVelocity = getVelocity(); //blocks/s
-        Vec deltaPos = applyGravityAndDrag(hasGravity, currentVelocity.div(tps)); //blocks/t
+        final Vec currentVelocity = getVelocity(); //blocks/s
+        final Vec deltaPos = applyGravityAndDrag(hasGravity, currentVelocity.div(tps)); //blocks/t
 
-        Pos newPos;
-        Vec newVelocity; //blocks/t
+        final Pos newPos;
+        final Vec newVelocity; //blocks/t
         if(hasPhysics) {
             //perform block collisions
             PhysicsResult result = CollisionUtils.handlePhysics(this, deltaPos, lastPhysicsResult);
@@ -602,16 +602,16 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         velocity = newVelocity.mul(tps);
 
         //finally, apply world border collision
-        Pos finalPos = CollisionUtils.applyWorldBorder(instance, position, newPos);
+        final Pos finalPos = CollisionUtils.applyWorldBorder(instance, position, newPos);
 
         //don't update entity if moving into an unloaded chunk
-        Chunk newChunk = ChunkUtils.retrieve(instance, currentChunk, finalPos);
+        final Chunk newChunk = ChunkUtils.retrieve(instance, currentChunk, finalPos);
         if(!ChunkUtils.isLoaded(newChunk)) {
             return;
         }
 
         //update entity position or coordinate if necessary
-        boolean positionChanged = !finalPos.samePoint(position);
+        final boolean positionChanged = !finalPos.samePoint(position);
         if(positionChanged) {
             if (entityType == EntityTypes.ITEM || entityType == EntityType.FALLING_BLOCK) {
                 previousPosition = position;
@@ -631,9 +631,9 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
 
     //return value is in blocks/t, curentVelocity is in blocks/t
     private Vec applyGravityAndDrag(boolean hasGravity, Vec currentVelocity) {
-        EntitySpawnType type = entityType.registry().spawnType();
-        double airDrag = type == EntitySpawnType.LIVING || type == EntitySpawnType.PLAYER ? 0.91 : 0.98;
-        double drag;
+        final EntitySpawnType type = entityType.registry().spawnType();
+        final double airDrag = type == EntitySpawnType.LIVING || type == EntitySpawnType.PLAYER ? 0.91 : 0.98;
+        final double drag;
         if(onGround) {
             Chunk chunk = ChunkUtils.retrieve(instance, currentChunk, position);
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
