@@ -10,6 +10,7 @@ import net.minestom.server.event.EventDispatcher;
 import net.minestom.server.event.instance.BlockChangeEvent;
 import net.minestom.server.event.instance.InstanceChunkLoadEvent;
 import net.minestom.server.event.instance.InstanceChunkUnloadEvent;
+import net.minestom.server.event.instance.PreBlockChangeEvent;
 import net.minestom.server.event.player.PlayerBlockBreakEvent;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockHandler;
@@ -114,18 +115,24 @@ public class InstanceContainer extends Instance {
                                               @Nullable BlockHandler.Placement placement, @Nullable BlockHandler.Destroy destroy) {
         if (chunk.isReadOnly()) return;
         synchronized (chunk) {
+            final Vec blockPosition = new Vec(x, y, z);
+            final Block previousBlock = chunk.getBlock(blockPosition);
+            final BlockHandler previousHandler = previousBlock.handler();
+
+            PreBlockChangeEvent event = new PreBlockChangeEvent(blockPosition, previousBlock, block, this);
+            EventDispatcher.call(event);
+            if(event.isCancelled()) {
+                return;
+            }
+
             // Refresh the last block change time
             this.lastBlockChangeTime = System.currentTimeMillis();
-            final Vec blockPosition = new Vec(x, y, z);
             if (isAlreadyChanged(blockPosition, block)) { // do NOT change the block again.
                 // Avoids StackOverflowExceptions when onDestroy tries to destroy the block itself
                 // This can happen with nether portals which break the entire frame when a portal block is broken
                 return;
             }
             this.currentlyChangingBlocks.put(blockPosition, block);
-
-            final Block previousBlock = chunk.getBlock(blockPosition);
-            final BlockHandler previousHandler = previousBlock.handler();
 
             // Change id based on neighbors
             final BlockPlacementRule blockPlacementRule = MinecraftServer.getBlockManager().getBlockPlacementRule(block);
@@ -140,7 +147,7 @@ public class InstanceContainer extends Instance {
             executeNeighboursBlockPlacementRule(blockPosition);
 
             // Refresh player chunk block
-            {
+            if(event.syncClient()){
                 chunk.sendPacketToViewers(new BlockChangePacket(blockPosition, block.stateId()));
                 var registry = block.registry();
                 if (registry.isBlockEntity()) {
