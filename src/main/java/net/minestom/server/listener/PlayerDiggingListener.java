@@ -9,6 +9,7 @@ import net.minestom.server.event.EventDispatcher;
 import net.minestom.server.event.item.ItemUpdateStateEvent;
 import net.minestom.server.event.player.PlayerStartDiggingEvent;
 import net.minestom.server.event.player.PlayerSwapItemEvent;
+import net.minestom.server.event.player.PrePlayerStartDiggingEvent;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.inventory.PlayerInventory;
@@ -17,9 +18,12 @@ import net.minestom.server.item.StackingRule;
 import net.minestom.server.network.packet.client.play.ClientPlayerDiggingPacket;
 import net.minestom.server.network.packet.server.play.AcknowledgePlayerDiggingPacket;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public final class PlayerDiggingListener {
-
     public static void playerDiggingListener(ClientPlayerDiggingPacket packet, Player player) {
         final ClientPlayerDiggingPacket.Status status = packet.status();
         final Point blockPosition = packet.blockPosition();
@@ -47,8 +51,14 @@ public final class PlayerDiggingListener {
         }
         // Acknowledge start/cancel/finish digging status
         if (diggingResult != null) {
-            player.sendPacket(new AcknowledgePlayerDiggingPacket(blockPosition, diggingResult.block,
-                    status, diggingResult.success));
+            PrePlayerStartDiggingEvent event = new PrePlayerStartDiggingEvent(diggingResult, player, blockPosition);
+            EventDispatcher.call(event);
+
+            if(!event.isCancelled()) {
+                diggingResult = event.getResult();
+                player.sendPacket(new AcknowledgePlayerDiggingPacket(blockPosition, diggingResult.block,
+                        status, diggingResult.success));
+            }
         }
     }
 
@@ -182,6 +192,6 @@ public final class PlayerDiggingListener {
         }
     }
 
-    private record DiggingResult(Block block, boolean success) {
+    public record DiggingResult(Block block, boolean success) {
     }
 }
