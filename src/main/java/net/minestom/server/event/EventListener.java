@@ -44,11 +44,11 @@ public interface EventListener<T extends Event> {
 
     class Builder<T extends Event> {
         private final Class<T> eventType;
-        private final List<Predicate<T>> filters = new ArrayList<>();
+        private final List<Predicate<? super T>> filters = new ArrayList<>();
         private boolean ignoreCancelled = true;
         private int expireCount;
-        private Predicate<T> expireWhen;
-        private Consumer<T> handler;
+        private Predicate<? super T> expireWhen;
+        private Consumer<? super T> handler;
 
         protected Builder(Class<T> eventType) {
             this.eventType = eventType;
@@ -59,7 +59,7 @@ public interface EventListener<T extends Event> {
          * be called if this condition passes on the given event.
          */
         @Contract(value = "_ -> this")
-        public @NotNull EventListener.Builder<T> filter(Predicate<T> filter) {
+        public @NotNull EventListener.Builder<T> filter(Predicate<? super T> filter) {
             this.filters.add(filter);
             return this;
         }
@@ -95,7 +95,7 @@ public interface EventListener<T extends Event> {
          * @param expireWhen The condition to test
          */
         @Contract(value = "_ -> this")
-        public @NotNull EventListener.Builder<T> expireWhen(Predicate<T> expireWhen) {
+        public @NotNull EventListener.Builder<T> expireWhen(Predicate<? super T> expireWhen) {
             this.expireWhen = expireWhen;
             return this;
         }
@@ -105,7 +105,7 @@ public interface EventListener<T extends Event> {
          * all conditions.
          */
         @Contract(value = "_ -> this")
-        public @NotNull EventListener.Builder<T> handler(Consumer<T> handler) {
+        public @NotNull EventListener.Builder<T> handler(Consumer<? super T> handler) {
             this.handler = handler;
             return this;
         }
@@ -116,7 +116,7 @@ public interface EventListener<T extends Event> {
             AtomicInteger expirationCount = new AtomicInteger(this.expireCount);
             final boolean hasExpirationCount = expirationCount.get() > 0;
 
-            final Predicate<T> expireWhen = this.expireWhen;
+            final Predicate<? super T> expireWhen = this.expireWhen;
 
             final var filters = new ArrayList<>(this.filters);
             final var handler = this.handler;
