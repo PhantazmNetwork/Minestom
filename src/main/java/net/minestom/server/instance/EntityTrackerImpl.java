@@ -1,5 +1,6 @@
 package net.minestom.server.instance;
 
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.entity.Entity;
@@ -159,6 +160,38 @@ final class EntityTrackerImpl implements EntityTracker {
                     }
                 });
             });
+        }
+    }
+
+    @Override
+    public <T extends Entity> void raytraceCandidates(@NotNull Point start, @NotNull Point end,
+                                                      @NotNull Target<T> target, @NotNull Consumer<T> query) {
+        //based on 2D DDA algorithm, run on the projections of start and end onto the XZ plane
+        //units are in chunks, 1 chunk = 16 blocks
+        final double dx = (end.x() - start.x()) / Chunk.CHUNK_SECTION_SIZE;
+        final double dz = (end.z() - start.z()) / Chunk.CHUNK_SECTION_SIZE;
+
+        final double adx = Math.abs(dx);
+        final double adz = Math.abs(dz);
+
+        final int steps = (int) Math.ceil(Math.max(adx, adz));
+
+        final double xi = dx / steps;
+        final double zi = dz / steps;
+
+        double x = start.x() / Chunk.CHUNK_SECTION_SIZE;
+        double z = start.z() / Chunk.CHUNK_SECTION_SIZE;
+
+        final Long2ObjectMap<List<Entity>> entities = entries[target.ordinal()].chunkEntities;
+        for(int i = 0; i < steps; i++) {
+            //noinspection unchecked
+            final List<T> list = (List<T>) entities.get(getChunkIndex((int) Math.floor(x), (int) Math.floor(z)));
+            if(list != null && !list.isEmpty()) {
+                list.forEach(query);
+            }
+
+            x += xi;
+            z += zi;
         }
     }
 

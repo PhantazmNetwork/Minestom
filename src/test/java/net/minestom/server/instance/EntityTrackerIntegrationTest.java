@@ -4,6 +4,7 @@ import net.minestom.server.MinecraftServer;
 import net.minestom.server.api.Env;
 import net.minestom.server.api.EnvTest;
 import net.minestom.server.coordinate.Pos;
+import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityType;
 import net.minestom.server.entity.Player;
@@ -20,6 +21,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @EnvTest
 public class EntityTrackerIntegrationTest {
+
+    @Test
+    public void raycastOrigin(Env env) {
+        final Instance instance = env.createFlatInstance();
+        final Entity entity = new Entity(EntityType.ZOMBIE);
+        entity.setInstance(instance, new Pos(5, 5, 5)).join();
+
+        instance.getEntityTracker().raytraceCandidates(new Vec(0, 0, 0), new Vec(10, 10, 10),
+                EntityTracker.Target.ENTITIES, sample -> {
+            assertEquals(entity, sample);
+        });
+    }
 
     @Test
     public void maxDistance(Env env) {

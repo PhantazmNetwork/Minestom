@@ -63,6 +63,9 @@ public sealed interface EntityTracker permits EntityTrackerImpl {
     <T extends Entity> void nearbyEntities(@NotNull Point point, double range,
                                            @NotNull Target<T> target, @NotNull Consumer<T> query);
 
+    <T extends Entity> void raytraceCandidates(@NotNull Point start, @NotNull Point end, @NotNull Target<T> target,
+                                               @NotNull Consumer<T> query);
+
     /**
      * Gets all the entities tracked by this class.
      */
