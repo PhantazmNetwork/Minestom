@@ -52,6 +52,10 @@ final class ShapeImpl implements Shape {
             vals.add(newVal);
         }
 
+        if (vals.isEmpty()) {
+            return new ShapeImpl(new BoundingBox[]{ BoundingBox.ZERO }, blockEntry);
+        }
+
         final int count = vals.size() / 6;
         BoundingBox[] boundingBoxes = new BoundingBox[count];
         for (int i = 0; i < count; ++i) {
