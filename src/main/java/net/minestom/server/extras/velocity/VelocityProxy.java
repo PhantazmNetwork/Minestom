@@ -25,6 +25,8 @@ public final class VelocityProxy {
     private static final int SUPPORTED_FORWARDING_VERSION = 1;
     private static final String MAC_ALGORITHM = "HmacSHA256";
 
+    private static final int INTEGER_STRING_LENGTH = String.valueOf(Integer.MIN_VALUE).length();
+
     private static volatile boolean enabled;
     private static Key key;
 
@@ -116,7 +118,7 @@ public final class VelocityProxy {
                     }
                 }
                 case "protocolVersion" -> {
-                    final String value = reader.readSizedString(Integer.SIZE);
+                    final String value = reader.readSizedString(INTEGER_STRING_LENGTH);
                     if (reader.readBoolean()) {
                         reader.readSizedString(Short.MAX_VALUE);
                     }
