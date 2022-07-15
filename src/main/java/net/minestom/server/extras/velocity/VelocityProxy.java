@@ -116,9 +116,9 @@ public final class VelocityProxy {
                     }
                 }
                 case "protocolVersion" -> {
-                    final String value = reader.readSizedString(Short.MAX_VALUE);
+                    final String value = reader.readSizedString(Integer.SIZE);
                     if (reader.readBoolean()) {
-                        reader.readSizedString(String.valueOf(Integer.MIN_VALUE).length());
+                        reader.readSizedString(Short.MAX_VALUE);
                     }
 
                     if (value != null) {
