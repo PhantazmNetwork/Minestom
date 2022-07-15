@@ -1,6 +1,5 @@
 package net.minestom.server.network.packet.client.handshake;
 
-import it.unimi.dsi.fastutil.Pair;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.MinecraftServer;
@@ -56,19 +55,21 @@ public record HandshakePacket(int protocolVersion, @NotNull String serverAddress
                 boolean hasProperties = split.length == 4;
                 if (split.length == 3 || hasProperties) {
                     PlayerSkin playerSkin;
+                    int protocolVersion = MinecraftServer.PROTOCOL_VERSION;
                     if (BungeeCordProxy.isBungeeGuardEnabled()) {
                         if (!hasProperties) {
                             socketConnection.sendPacket(new LoginDisconnectPacket(BungeeCordProxy.NO_BUNGEE_GUARD_TOKEN));
                             socketConnection.disconnect();
                             return;
                         } else {
-                            Pair<PlayerSkin, Component> skinMessagePair = BungeeCordProxy.readSkinBungeeGuard(split[3]);
-                            if (skinMessagePair.right() != null) {
-                                socketConnection.sendPacket(new LoginDisconnectPacket(skinMessagePair.right()));
+                            BungeeCordProxy.Response response = BungeeCordProxy.readResponseBungeeGuard(split[3]);
+                            if (response.message() != null) {
+                                socketConnection.sendPacket(new LoginDisconnectPacket(response.message()));
                                 socketConnection.disconnect();
                                 return;
                             } else {
-                                playerSkin = skinMessagePair.left();
+                                playerSkin = response.playerSkin();
+                                protocolVersion = response.protocolVersion();
                             }
                         }
                     } else {
@@ -90,6 +91,7 @@ public record HandshakePacket(int protocolVersion, @NotNull String serverAddress
 
                     socketConnection.UNSAFE_setBungeeUuid(playerUuid);
                     socketConnection.UNSAFE_setBungeeSkin(playerSkin);
+                    socketConnection.UNSAFE_setActualProtocolVersion(protocolVersion);
                 } else {
                     socketConnection.sendPacket(new LoginDisconnectPacket(INVALID_BUNGEE_FORWARDING));
                     socketConnection.disconnect();

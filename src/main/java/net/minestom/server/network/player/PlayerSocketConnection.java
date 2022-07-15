@@ -73,6 +73,8 @@ public class PlayerSocketConnection extends PlayerConnection {
     private UUID bungeeUuid;
     private PlayerSkin bungeeSkin;
 
+    private int actualProtocolVersion = MinecraftServer.PROTOCOL_VERSION;
+
     private final List<BinaryBuffer> waitingBuffers = new ArrayList<>();
     private final AtomicReference<BinaryBuffer> tickBuffer = new AtomicReference<>(POOL.get());
     private BinaryBuffer cacheBuffer;
@@ -266,6 +268,14 @@ public class PlayerSocketConnection extends PlayerConnection {
     @Override
     public int getProtocolVersion() {
         return protocolVersion;
+    }
+
+    public int getActualProtocolVersion() {
+        return actualProtocolVersion;
+    }
+
+    public void UNSAFE_setActualProtocolVersion(int actualProtocolVersion) {
+        this.actualProtocolVersion = actualProtocolVersion;
     }
 
     /**

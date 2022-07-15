@@ -4,7 +4,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.Player;
-import net.minestom.server.entity.PlayerSkin;
 import net.minestom.server.extras.velocity.VelocityProxy;
 import net.minestom.server.network.ConnectionManager;
 import net.minestom.server.network.packet.client.ClientPreplayPacket;
@@ -40,7 +39,7 @@ public record LoginPluginResponsePacket(int messageId, byte @Nullable [] data) i
                 SocketAddress socketAddress = null;
                 UUID playerUuid = null;
                 String playerUsername = null;
-                PlayerSkin playerSkin = null;
+                VelocityProxy.Response response = null;
 
                 // Velocity
                 if (VelocityProxy.isEnabled() && channel.equals(VelocityProxy.PLAYER_INFO_CHANNEL)) {
@@ -56,7 +55,7 @@ public record LoginPluginResponsePacket(int messageId, byte @Nullable [] data) i
                             playerUuid = reader.readUuid();
                             playerUsername = reader.readSizedString(16);
 
-                            playerSkin = VelocityProxy.readSkin(reader);
+                            response = VelocityProxy.readResponse(reader);
                         }
                     }
                 }
@@ -68,13 +67,14 @@ public record LoginPluginResponsePacket(int messageId, byte @Nullable [] data) i
                     if (playerUsername != null) {
                         socketConnection.UNSAFE_setLoginUsername(playerUsername);
                     }
+                    socketConnection.UNSAFE_setActualProtocolVersion(response.protocolVersion());
 
                     final String username = socketConnection.getLoginUsername();
                     final UUID uuid = playerUuid != null ?
                             playerUuid : CONNECTION_MANAGER.getPlayerConnectionUuid(connection, username);
 
                     Player player = CONNECTION_MANAGER.startPlayState(connection, uuid, username, true);
-                    player.setSkin(playerSkin);
+                    player.setSkin(response.playerSkin());
                 } else {
                     LoginDisconnectPacket disconnectPacket = new LoginDisconnectPacket(INVALID_PROXY_RESPONSE);
                     socketConnection.sendPacket(disconnectPacket);

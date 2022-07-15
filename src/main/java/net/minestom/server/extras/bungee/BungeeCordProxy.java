@@ -7,6 +7,7 @@ import com.google.gson.JsonParser;
 import it.unimi.dsi.fastutil.Pair;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.minestom.server.MinecraftServer;
 import net.minestom.server.entity.PlayerSkin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -89,10 +90,16 @@ public final class BungeeCordProxy {
     }
 
     public static @NotNull Pair<PlayerSkin, Component> readSkinBungeeGuard(@NotNull String json) {
+        Response response = readResponseBungeeGuard(json);
+        return Pair.of(response.playerSkin(), response.message());
+    }
+
+    public static @NotNull Response readResponseBungeeGuard(@NotNull String json) {
         JsonArray array = JsonParser.parseString(json).getAsJsonArray();
         boolean foundToken = false;
         Component message = NO_BUNGEE_GUARD_TOKEN;
         PlayerSkin skin = null;
+        int protocolVersion = MinecraftServer.PROTOCOL_VERSION;
 
         for (JsonElement element : array) {
             JsonObject jsonObject = element.getAsJsonObject();
@@ -123,11 +130,21 @@ public final class BungeeCordProxy {
 
                         message = null;
                     }
+                    case "protocolVersion" -> {
+                        JsonElement value = jsonObject.get("value");
+                        if (value == null) continue;
+
+                        protocolVersion = value.getAsInt();
+                    }
                 }
             }
         }
 
-        return Pair.of(skin, message);
+        return new Response(skin, protocolVersion, message);
+    }
+
+    public record Response(PlayerSkin playerSkin, int protocolVersion, Component message) {
+
     }
 
 }
