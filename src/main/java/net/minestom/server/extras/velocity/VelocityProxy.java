@@ -105,16 +105,22 @@ public final class VelocityProxy {
         final int properties = reader.readVarInt();
         for (int i = 0; i < properties; i++) {
             final String name = reader.readSizedString(Short.MAX_VALUE);
-            final String value = reader.readSizedString(Short.MAX_VALUE);
-            final String signature = reader.readBoolean() ? reader.readSizedString(Short.MAX_VALUE) : null;
 
             switch (name) {
                 case "textures" -> {
+                    final String value = reader.readSizedString(Short.MAX_VALUE);
+                    final String signature = reader.readBoolean() ? reader.readSizedString(Short.MAX_VALUE) : null;
+
                     if (value != null && signature != null) {
                         playerSkin = new PlayerSkin(value, signature);
                     }
                 }
                 case "protocolVersion" -> {
+                    final String value = reader.readSizedString(Short.MAX_VALUE);
+                    if (reader.readBoolean()) {
+                        reader.readSizedString(String.valueOf(Integer.MIN_VALUE).length());
+                    }
+
                     if (value != null) {
                         try {
                             protocolVersion = Integer.parseInt(value);
