@@ -42,7 +42,6 @@ public class AnvilLoader implements IChunkLoader {
     private final Path levelPath;
     private final Path regionPath;
 
-    private ChunkSupplier chunkSupplier;
     private static class RegionCache extends ConcurrentHashMap<IntIntImmutablePair, Set<IntIntImmutablePair>> {}
 
     /**
@@ -57,6 +56,8 @@ public class AnvilLoader implements IChunkLoader {
             return new Int2ObjectArrayMap<>();
         }
     };
+
+    private ChunkSupplier chunkSupplier;
 
     public AnvilLoader(@NotNull Path path) {
         this.path = path;
@@ -108,7 +109,7 @@ public class AnvilLoader implements IChunkLoader {
 
         final ChunkReader chunkReader = new ChunkReader(chunkData);
 
-        Chunk chunk = chunkSupplier.createChunk(instance, chunkX, chunkZ);
+        Chunk chunk = new DynamicChunk(instance, chunkX, chunkZ);
         synchronized (chunk) {
             var yRange = chunkReader.getYRange();
             if(yRange.getStart() < instance.getDimensionType().getMinY()) {
