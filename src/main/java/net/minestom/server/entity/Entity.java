@@ -374,7 +374,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     }
 
     @ApiStatus.Experimental
-    public void updateViewableRule(@Nullable Predicate<Player> predicate) {
+    public void updateViewableRule(@Nullable Predicate<? super Player> predicate) {
         this.viewEngine.viewableOption.updateRule(predicate);
     }
 
@@ -553,13 +553,15 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     /**
      * Tick for actions that should run before velocityTick(). Does nothing by default and is intended solely to be
      * overridden by subclasses.
+     *
      * @param time the current time
      */
-    protected void preTick(long time) {}
+    protected void preTick(long time) {
+    }
 
     private void velocityTick() {
         //no velocity for entities riding others
-        if(vehicle != null) {
+        if (vehicle != null) {
             return;
         }
 
@@ -569,7 +571,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         final boolean hasGravity = !hasNoGravity();
         final boolean isPlayer = PlayerUtils.isSocketClient(this);
 
-        if(!hasVelocity() && !hasGravity) {
+        if (!hasVelocity() && !hasGravity) {
             //if we have no velocity and no gravity, don't update
             return;
         }
@@ -582,18 +584,17 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
 
         final Pos newPos;
         final Vec newVelocity; //blocks/t
-        if(hasPhysics) {
+        if (hasPhysics) {
             //perform block collisions
             PhysicsResult result = CollisionUtils.handlePhysics(this, deltaPos, lastPhysicsResult);
             lastPhysicsResult = result;
-            if(!isPlayer) {
+            if (!isPlayer) {
                 onGround = onGround ? Math.abs(result.newVelocity().y()) < Vec.EPSILON : result.isOnGround();
             }
 
             newPos = result.newPosition();
             newVelocity = result.newVelocity();
-        }
-        else {
+        } else {
             //this entity doesn't have any physics so ignore blocks
             newPos = position.add(deltaPos);
             newVelocity = deltaPos;
@@ -606,25 +607,24 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
 
         //don't update entity if moving into an unloaded chunk
         final Chunk newChunk = ChunkUtils.retrieve(instance, currentChunk, finalPos);
-        if(!ChunkUtils.isLoaded(newChunk)) {
+        if (!ChunkUtils.isLoaded(newChunk)) {
             return;
         }
 
         //update entity position or coordinate if necessary
         final boolean positionChanged = !finalPos.samePoint(position);
-        if(positionChanged) {
+        if (positionChanged) {
             if (entityType == EntityTypes.ITEM || entityType == EntityType.FALLING_BLOCK) {
                 previousPosition = position;
                 position = finalPos;
                 refreshCoordinate(finalPos);
-            }
-            else if (!isPlayer) {
+            } else if (!isPlayer) {
                 refreshPosition(finalPos, true);
             }
         }
 
         //send packets if needed
-        if(!isPlayer) {
+        if (!isPlayer) {
             sendPacketsToViewers(getVelocityPacket());
         }
     }
@@ -634,15 +634,14 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         final EntitySpawnType type = entityType.registry().spawnType();
         final double airDrag = type == EntitySpawnType.LIVING || type == EntitySpawnType.PLAYER ? 0.91 : 0.98;
         final double drag;
-        if(onGround) {
+        if (onGround) {
             Chunk chunk = ChunkUtils.retrieve(instance, currentChunk, position);
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
             synchronized (chunk) {
                 drag = chunk.getBlock(position.sub(0, 0.5 + Vec.EPSILON, 0), Block.Getter.Condition.TYPE)
                         .registry().friction() * airDrag;
             }
-        }
-        else {
+        } else {
             drag = airDrag;
         }
 
