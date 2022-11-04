@@ -1,28 +1,28 @@
 package net.minestom.server.network.packet.server.play;
 
 import net.kyori.adventure.text.Component;
+import net.minestom.server.network.NetworkBuffer;
 import net.minestom.server.network.packet.server.ComponentHoldingServerPacket;
 import net.minestom.server.network.packet.server.ServerPacket;
 import net.minestom.server.network.packet.server.ServerPacketIdentifier;
-import net.minestom.server.utils.binary.BinaryReader;
-import net.minestom.server.utils.binary.BinaryWriter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 import java.util.function.UnaryOperator;
 
+import static net.minestom.server.network.NetworkBuffer.*;
+
 public record ChatPreviewPacket(int queryId, @Nullable Component preview) implements ComponentHoldingServerPacket {
-    public ChatPreviewPacket(BinaryReader reader) {
-        this(reader.readInt(), reader.readBoolean() ? reader.readComponent() : null);
+    public ChatPreviewPacket(@NotNull NetworkBuffer reader) {
+        this(reader.read(INT), reader.readOptional(COMPONENT));
     }
 
     @Override
-    public void write(@NotNull BinaryWriter writer) {
-        writer.writeInt(queryId);
-        writer.writeBoolean(preview != null);
-        if (preview != null) writer.writeComponent(preview);
+    public void write(@NotNull NetworkBuffer writer) {
+        writer.write(INT, queryId);
+        writer.writeOptional(COMPONENT, preview);
     }
 
     @Override
@@ -32,7 +32,7 @@ public record ChatPreviewPacket(int queryId, @Nullable Component preview) implem
 
     @Override
     public @NotNull Collection<Component> components() {
-        return Collections.singleton(preview);
+        return List.of(preview);
     }
 
     @Override

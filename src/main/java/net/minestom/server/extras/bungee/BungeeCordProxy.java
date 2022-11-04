@@ -146,5 +146,4 @@ public final class BungeeCordProxy {
     public record Response(PlayerSkin playerSkin, int protocolVersion, Component message) {
 
     }
-
 }

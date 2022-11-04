@@ -86,6 +86,8 @@ import java.util.function.UnaryOperator;
 public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, EventHandler<EntityEvent>, Taggable,
         PermissionHandler, HoverEventSource<ShowEntity>, Sound.Emitter {
 
+    private static final int VELOCITY_UPDATE_INTERVAL = 1;
+
     private static final Int2ObjectSyncMap<Entity> ENTITY_BY_ID = Int2ObjectSyncMap.hashmap();
     private static final Map<UUID, Entity> ENTITY_BY_UUID = new ConcurrentHashMap<>();
     private static final AtomicInteger LAST_ENTITY_ID = new AtomicInteger();
@@ -106,6 +108,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
 
     // Velocity
     protected Vec velocity = Vec.ZERO; // Movement in block per second
+    protected boolean lastVelocityWasZero = true;
     protected boolean hasPhysics = true;
 
     /**
@@ -604,7 +607,12 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
                         -gravityAcceleration * tps * (1 - gravityDragPerTick),
                         0
                 );
-                if (!isPlayer) sendPacketToViewers(getVelocityPacket());
+                if (this.ticks % VELOCITY_UPDATE_INTERVAL == 0) {
+                    if (!isPlayer && !this.lastVelocityWasZero) {
+                        sendPacketToViewers(getVelocityPacket());
+                        this.lastVelocityWasZero = !hasVelocity;
+                    }
+                }
                 return;
             }
         }
@@ -631,8 +639,11 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
             updateVelocity(wasOnGround, flying, positionBeforeMove, newVelocity);
         }
         // Verify if velocity packet has to be sent
-        if (!isPlayer && (hasVelocity || gravityTickCount > 0)) {
-            sendPacketToViewers(getVelocityPacket());
+        if (this.ticks % VELOCITY_UPDATE_INTERVAL == 0) {
+            if (!isPlayer && (hasVelocity || !lastVelocityWasZero)) {
+                sendPacketToViewers(getVelocityPacket());
+                this.lastVelocityWasZero = !hasVelocity;
+            }
         }
     }
 
@@ -1648,7 +1659,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     public List<Point> getLineOfSight(int maxDistance) {
         Instance instance = getInstance();
         if (instance == null) {
-            return Collections.emptyList();
+            return List.of();
         }
 
         List<Point> blocks = new ArrayList<>();
@@ -1727,6 +1738,13 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         SWIMMING,
         SPIN_ATTACK,
         SNEAKING,
-        DYING
+        LONG_JUMPING,
+        DYING,
+        CROAKING,
+        USING_TONGUE,
+        ROARING,
+        SNIFFING,
+        EMERGING,
+        DIGGING
     }
 }
