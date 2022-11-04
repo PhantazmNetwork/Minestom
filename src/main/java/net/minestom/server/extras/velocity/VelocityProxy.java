@@ -1,10 +1,15 @@
 package net.minestom.server.extras.velocity;
 
+import net.minestom.server.MinecraftServer;
+import net.minestom.server.entity.PlayerSkin;
 import net.minestom.server.network.NetworkBuffer;
+import net.minestom.server.utils.binary.BinaryReader;
 import org.jetbrains.annotations.NotNull;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.MessageDigest;

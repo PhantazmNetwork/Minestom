@@ -3,10 +3,6 @@ package net.minestom.server.network.packet.client.login;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.MinecraftServer;
-<<<<<<< HEAD
-import net.minestom.server.entity.Player;
-=======
->>>>>>> upstream/master
 import net.minestom.server.extras.velocity.VelocityProxy;
 import net.minestom.server.network.ConnectionManager;
 import net.minestom.server.network.NetworkBuffer;
@@ -43,13 +39,9 @@ public record LoginPluginResponsePacket(int messageId, byte @Nullable [] data) i
                 boolean success = false;
 
                 SocketAddress socketAddress = null;
-<<<<<<< HEAD
-                UUID playerUuid = null;
-                String playerUsername = null;
-                VelocityProxy.Response response = null;
-=======
+
                 GameProfile gameProfile = null;
->>>>>>> upstream/master
+
 
                 // Velocity
                 if (VelocityProxy.isEnabled() && channel.equals(VelocityProxy.PLAYER_INFO_CHANNEL)) {
@@ -67,40 +59,15 @@ public record LoginPluginResponsePacket(int messageId, byte @Nullable [] data) i
                             }
                             final int port = ((java.net.InetSocketAddress) connection.getRemoteAddress()).getPort();
                             socketAddress = new InetSocketAddress(address, port);
-<<<<<<< HEAD
-
-                            playerUuid = reader.readUuid();
-                            playerUsername = reader.readSizedString(16);
-
-                            response = VelocityProxy.readResponse(reader);
-=======
                             gameProfile = new GameProfile(buffer);
->>>>>>> upstream/master
                         }
                     }
                 }
 
                 if (success) {
-<<<<<<< HEAD
-                    if (socketAddress != null) {
-                        socketConnection.setRemoteAddress(socketAddress);
-                    }
-                    if (playerUsername != null) {
-                        socketConnection.UNSAFE_setLoginUsername(playerUsername);
-                    }
-                    socketConnection.UNSAFE_setActualProtocolVersion(response.protocolVersion());
-
-                    final String username = socketConnection.getLoginUsername();
-                    final UUID uuid = playerUuid != null ?
-                            playerUuid : CONNECTION_MANAGER.getPlayerConnectionUuid(connection, username);
-
-                    Player player = CONNECTION_MANAGER.startPlayState(connection, uuid, username, true);
-                    player.setSkin(response.playerSkin());
-=======
                     socketConnection.setRemoteAddress(socketAddress);
                     socketConnection.UNSAFE_setProfile(gameProfile);
                     CONNECTION_MANAGER.startPlayState(connection, gameProfile.uuid(), gameProfile.name(), true);
->>>>>>> upstream/master
                 } else {
                     LoginDisconnectPacket disconnectPacket = new LoginDisconnectPacket(INVALID_PROXY_RESPONSE);
                     socketConnection.sendPacket(disconnectPacket);

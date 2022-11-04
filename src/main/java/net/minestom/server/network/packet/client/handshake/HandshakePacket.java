@@ -33,17 +33,6 @@ public record HandshakePacket(int protocolVersion, @NotNull String serverAddress
     private static final Component INVALID_VERSION_TEXT = Component.text("Invalid Version, please use " + MinecraftServer.VERSION_NAME, NamedTextColor.RED);
     private static final Component INVALID_BUNGEE_FORWARDING = Component.text("If you wish to use IP forwarding, please enable it in your BungeeCord config as well!", NamedTextColor.RED);
 
-<<<<<<< HEAD
-    public HandshakePacket(BinaryReader reader) {
-        this(reader.readVarInt(), reader.readSizedString(BungeeCordProxy.getMaxHandshakeLength()),
-                reader.readUnsignedShort(), reader.readVarInt());
-    }
-
-    @Override
-    public void write(@NotNull BinaryWriter writer) {
-        writer.writeVarInt(protocolVersion);
-        int maxLength = BungeeCordProxy.getMaxHandshakeLength();
-=======
     public HandshakePacket {
         if (serverAddress.length() > (BungeeCordProxy.isEnabled() ? Short.MAX_VALUE : 255)) {
             throw new IllegalArgumentException("Server address too long: " + serverAddress.length());
@@ -59,7 +48,6 @@ public record HandshakePacket(int protocolVersion, @NotNull String serverAddress
     public void write(@NotNull NetworkBuffer writer) {
         writer.write(VAR_INT, protocolVersion);
         int maxLength = BungeeCordProxy.isEnabled() ? Short.MAX_VALUE : 255;
->>>>>>> upstream/master
         if (serverAddress.length() > maxLength) {
             throw new IllegalArgumentException("serverAddress is " + serverAddress.length() + " characters long, maximum allowed is " + maxLength);
         }
@@ -75,57 +63,13 @@ public record HandshakePacket(int protocolVersion, @NotNull String serverAddress
         if (BungeeCordProxy.isEnabled() && connection instanceof PlayerSocketConnection socketConnection && nextState == 2) {
             final String[] split = address.split("\00");
 
-<<<<<<< HEAD
-                boolean hasProperties = split.length == 4;
-                if (split.length == 3 || hasProperties) {
-                    PlayerSkin playerSkin;
-                    int protocolVersion = MinecraftServer.PROTOCOL_VERSION;
-                    if (BungeeCordProxy.isBungeeGuardEnabled()) {
-                        if (!hasProperties) {
-                            socketConnection.sendPacket(new LoginDisconnectPacket(BungeeCordProxy.NO_BUNGEE_GUARD_TOKEN));
-                            socketConnection.disconnect();
-                            return;
-                        } else {
-                            BungeeCordProxy.Response response = BungeeCordProxy.readResponseBungeeGuard(split[3]);
-                            if (response.message() != null) {
-                                socketConnection.sendPacket(new LoginDisconnectPacket(response.message()));
-                                socketConnection.disconnect();
-                                return;
-                            } else {
-                                playerSkin = response.playerSkin();
-                                protocolVersion = response.protocolVersion();
-                            }
-                        }
-                    } else {
-                        playerSkin = BungeeCordProxy.readSkin(split[3]);
-                    }
-
-                    address = split[0];
-=======
             if (split.length == 3 || split.length == 4) {
                 address = split[0];
->>>>>>> upstream/master
 
                 final SocketAddress socketAddress = new java.net.InetSocketAddress(split[1],
                         ((java.net.InetSocketAddress) connection.getRemoteAddress()).getPort());
                 socketConnection.setRemoteAddress(socketAddress);
 
-<<<<<<< HEAD
-                    UUID playerUuid = UUID.fromString(
-                            split[2]
-                                    .replaceFirst(
-                                            "(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)", "$1-$2-$3-$4-$5"
-                                    )
-                    );
-
-                    socketConnection.UNSAFE_setBungeeUuid(playerUuid);
-                    socketConnection.UNSAFE_setBungeeSkin(playerSkin);
-                    socketConnection.UNSAFE_setActualProtocolVersion(protocolVersion);
-                } else {
-                    socketConnection.sendPacket(new LoginDisconnectPacket(INVALID_BUNGEE_FORWARDING));
-                    socketConnection.disconnect();
-                    return;
-=======
                 UUID playerUuid = java.util.UUID.fromString(
                         split[2]
                                 .replaceFirst(
@@ -150,7 +94,6 @@ public record HandshakePacket(int protocolVersion, @NotNull String serverAddress
 
                         properties.add(new GameProfile.Property(nameString, valueString, signatureString));
                     }
->>>>>>> upstream/master
                 }
 
                 final GameProfile gameProfile = new GameProfile(playerUuid, "test", properties);
