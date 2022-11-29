@@ -105,7 +105,7 @@ public class AnvilLoader implements IChunkLoader {
 
         final ChunkReader chunkReader = new ChunkReader(chunkData);
 
-        Chunk chunk = new DynamicChunk(instance, chunkX, chunkZ);
+        Chunk chunk = chunkSupplier.createChunk(instance, chunkX, chunkZ);
         synchronized (chunk) {
             var yRange = chunkReader.getYRange();
             if (yRange.getStart() < instance.getDimensionType().getMinY()) {

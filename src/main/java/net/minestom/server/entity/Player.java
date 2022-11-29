@@ -444,7 +444,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         setOnFire(false);
         refreshHealth();
         sendPacket(new RespawnPacket(getDimensionType().toString(), getDimensionType().getName().asString(),
-               0, gameMode, gameMode, false, levelFlat, true));
+                0, gameMode, gameMode, false, levelFlat, true));
 
         PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(this);
         EventDispatcher.call(respawnEvent);
@@ -658,7 +658,6 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         if (updateChunks) {
             final int chunkX = spawnPosition.chunkX();
             final int chunkZ = spawnPosition.chunkZ();
-            chunkUpdateLimitChecker.addToHistory(ChunkUtils.getChunkIndex(chunkX, chunkZ));
             chunksLoadedByClient = new Vec(chunkX, chunkZ);
             chunkUpdateLimitChecker.addToHistory(getChunk());
             sendPacket(new UpdateViewPositionPacket(chunkX, chunkZ));
@@ -2064,7 +2063,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
     }
 
     protected void sendChunkUpdates(Chunk newChunk) {
-        if (chunkUpdateLimitChecker.addToHistory(ChunkUtils.getChunkIndex(newChunk))) {
+        if (chunkUpdateLimitChecker.addToHistory(newChunk)) {
             final int newX = newChunk.getChunkX();
             final int newZ = newChunk.getChunkZ();
             final Vec old = chunksLoadedByClient;
