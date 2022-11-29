@@ -16,6 +16,8 @@ import net.minestom.server.network.player.GameProfile;
 import net.minestom.server.network.player.PlayerConnection;
 import net.minestom.server.network.player.PlayerSocketConnection;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.SocketAddress;
 import java.util.ArrayList;
@@ -27,14 +29,20 @@ import static net.minestom.server.network.NetworkBuffer.*;
 public record HandshakePacket(int protocolVersion, @NotNull String serverAddress,
                               int serverPort, int nextState) implements ClientPreplayPacket {
 
+    private final static Logger LOGGER = LoggerFactory.getLogger(HandshakePacket.class);
+
     /**
      * Text sent if a player tries to connect with an invalid version of the client
      */
     private static final Component INVALID_VERSION_TEXT = Component.text("Invalid Version, please use " + MinecraftServer.VERSION_NAME, NamedTextColor.RED);
-    private static final Component INVALID_BUNGEE_FORWARDING = Component.text("If you wish to use IP forwarding, please enable it in your BungeeCord config as well!", NamedTextColor.RED);
+
+    /**
+     * Indicates that a BungeeGuard authentication was invalid due to missing, multiple, or invalid tokens.
+     */
+    private static final Component INVALID_BUNGEE_FORWARDING = Component.text("Invalid connection, please connect through the BungeeCord proxy. If you believe this is an error, contact a server administrator.", NamedTextColor.RED);
 
     public HandshakePacket {
-        if (serverAddress.length() > BungeeCordProxy.getMaxHandshakeLength()) {
+        if (serverAddress.length() > getMaxHandshakeLength()) {
             throw new IllegalArgumentException("Server address too long: " + serverAddress.length());
         }
     }
@@ -47,7 +55,8 @@ public record HandshakePacket(int protocolVersion, @NotNull String serverAddress
     @Override
     public void write(@NotNull NetworkBuffer writer) {
         writer.write(VAR_INT, protocolVersion);
-        int maxLength = BungeeCordProxy.getMaxHandshakeLength();
+        int maxLength = getMaxHandshakeLength();
+
         if (serverAddress.length() > maxLength) {
             throw new IllegalArgumentException("serverAddress is " + serverAddress.length() + " characters long, maximum allowed is " + maxLength);
         }
@@ -66,8 +75,7 @@ public record HandshakePacket(int protocolVersion, @NotNull String serverAddress
             if (split.length == 3 || split.length == 4) {
                 boolean hasProperties = split.length == 4;
                 if (BungeeCordProxy.isBungeeGuardEnabled() && !hasProperties) {
-                    socketConnection.sendPacket(new LoginDisconnectPacket(BungeeCordProxy.INVALID_TOKEN));
-                    socketConnection.disconnect();
+                    bungeeDisconnect(socketConnection);
                     return;
                 }
 
@@ -85,8 +93,9 @@ public record HandshakePacket(int protocolVersion, @NotNull String serverAddress
                 );
 
                 List<GameProfile.Property> properties = new ArrayList<>();
-                boolean foundBungeeGuardToken = false;
                 if (hasProperties) {
+                    boolean foundBungeeGuardToken = false;
+
                     final String rawPropertyJson = split[3];
                     final JsonArray propertyJson = JsonParser.parseString(rawPropertyJson).getAsJsonArray();
                     for (JsonElement element : propertyJson) {
@@ -102,8 +111,7 @@ public record HandshakePacket(int protocolVersion, @NotNull String serverAddress
 
                         if (BungeeCordProxy.isBungeeGuardEnabled() && nameString.equals("bungeeguard-token")) {
                             if (foundBungeeGuardToken || !BungeeCordProxy.isValidBungeeGuardToken(valueString)) {
-                                socketConnection.sendPacket(new LoginDisconnectPacket(BungeeCordProxy.INVALID_TOKEN));
-                                socketConnection.disconnect();
+                                bungeeDisconnect(socketConnection);
                                 return;
                             }
 
@@ -114,8 +122,7 @@ public record HandshakePacket(int protocolVersion, @NotNull String serverAddress
                     }
 
                     if (BungeeCordProxy.isBungeeGuardEnabled() && !foundBungeeGuardToken) {
-                        socketConnection.sendPacket(new LoginDisconnectPacket(BungeeCordProxy.INVALID_TOKEN));
-                        socketConnection.disconnect();
+                        bungeeDisconnect(socketConnection);
                         return;
                     }
                 }
@@ -123,8 +130,7 @@ public record HandshakePacket(int protocolVersion, @NotNull String serverAddress
                 final GameProfile gameProfile = new GameProfile(playerUuid, "test", properties);
                 socketConnection.UNSAFE_setProfile(gameProfile);
             } else {
-                socketConnection.sendPacket(new LoginDisconnectPacket(INVALID_BUNGEE_FORWARDING));
-                socketConnection.disconnect();
+                bungeeDisconnect(socketConnection);
                 return;
             }
         }
@@ -141,8 +147,7 @@ public record HandshakePacket(int protocolVersion, @NotNull String serverAddress
                     connection.setConnectionState(ConnectionState.LOGIN);
                 } else {
                     // Incorrect client version
-                    connection.sendPacket(new LoginDisconnectPacket(INVALID_VERSION_TEXT));
-                    connection.disconnect();
+                    disconnect(connection, INVALID_VERSION_TEXT);
                 }
             }
             default -> {
@@ -150,4 +155,20 @@ public record HandshakePacket(int protocolVersion, @NotNull String serverAddress
             }
         }
     }
+
+    private static int getMaxHandshakeLength() {
+        // BungeeGuard limits handshake length to 2500 characters, while vanilla limits it to 255
+        return BungeeCordProxy.isEnabled() ? (BungeeCordProxy.isBungeeGuardEnabled() ? 2500 : Short.MAX_VALUE) : 255;
+    }
+
+    private void disconnect(@NotNull PlayerConnection connection, @NotNull Component reason) {
+        connection.sendPacket(new LoginDisconnectPacket(reason));
+        connection.disconnect();
+    }
+
+    private void bungeeDisconnect(@NotNull PlayerConnection connection) {
+        LOGGER.warn("{} tried to log in without valid BungeeGuard forwarding information.", connection.getIdentifier());
+        disconnect(connection, INVALID_BUNGEE_FORWARDING);
+    }
+
 }

@@ -3,40 +3,40 @@ package net.minestom.server.utils.chunk;
 import net.minestom.server.instance.Chunk;
 import org.jetbrains.annotations.ApiStatus;
 
+import java.util.Arrays;
+
 @ApiStatus.Internal
 public final class ChunkUpdateLimitChecker {
-    private final int maxHistorySize;
+    private final int historySize;
     private final long[] chunkHistory;
-    private int historySize;
 
     public ChunkUpdateLimitChecker(int historySize) {
-        this.maxHistorySize = historySize;
-        this.chunkHistory = new long[historySize + 1];
-        this.historySize = 0;
+        this.historySize = historySize;
+        this.chunkHistory = new long[historySize];
+        this.clearHistory();
     }
 
     /**
      * Adds the chunk to the history
      *
-     * @param index chunk index to add
+     * @param chunk chunk to add
      * @return {@code true} if it's a new chunk in the history
      */
-    public boolean addToHistory(long index) {
+    public boolean addToHistory(Chunk chunk) {
+        final long index = ChunkUtils.getChunkIndex(chunk);
         boolean result = true;
-        final int lastIndex = historySize;
+        final int lastIndex = historySize - 1;
         for (int i = 0; i < lastIndex; i++) {
             if (chunkHistory[i] == index) {
                 result = false;
-                break;
             }
+            chunkHistory[i] = chunkHistory[i + 1];
         }
         chunkHistory[lastIndex] = index;
-        if (historySize < maxHistorySize) {
-            historySize++;
-        }
-        else {
-            System.arraycopy(chunkHistory, 1, chunkHistory, 0, lastIndex);
-        }
         return result;
+    }
+
+    public void clearHistory() {
+        Arrays.fill(this.chunkHistory, Long.MAX_VALUE);
     }
 }

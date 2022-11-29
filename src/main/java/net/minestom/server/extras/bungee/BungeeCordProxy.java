@@ -14,12 +14,6 @@ import java.util.Set;
  * Please consider using {@link net.minestom.server.extras.velocity.VelocityProxy} instead.
  */
 public final class BungeeCordProxy {
-
-    /**
-     * Indicates that a BungeeGuard authentication was invalid due missing, multiple, or invalid tokens.
-     */
-    public static final Component INVALID_TOKEN = Component.text("Invalid connection, please connect through the proxy", NamedTextColor.RED);
-
     private static Set<String> bungeeGuardTokens = null;
 
     private static volatile boolean enabled;
@@ -69,15 +63,4 @@ public final class BungeeCordProxy {
     public static boolean isValidBungeeGuardToken(@NotNull String token) {
         return isBungeeGuardEnabled() && bungeeGuardTokens.contains(token);
     }
-
-    /**
-     * Gets the maximum length of the handshake packet.
-     *
-     * @return The maximum length of the handshake packet
-     */
-    public static int getMaxHandshakeLength() {
-        // BungeeGuard limits handshake length to 2500 characters, while vanilla limits it to 255
-        return isEnabled() ? (isBungeeGuardEnabled() ? 2500 : Short.MAX_VALUE) : 255;
-    }
-
 }
