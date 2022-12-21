@@ -21,6 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static net.minestom.server.utils.chunk.ChunkUtils.*;
 
@@ -131,7 +132,17 @@ final class EntityTrackerImpl implements EntityTracker {
     }
 
     @Override
-    public <T extends Entity> void nearbyEntities(@NotNull Point point, double range, @NotNull Target<T> target, @NotNull Consumer<T> query) {
+    public <T extends Entity> void nearbyEntities(@NotNull Point point, double range, @NotNull Target<T> target,
+                                                  @NotNull Consumer<T> query) {
+        nearbyEntitiesUntil(point, range, target, entity -> {
+            query.accept(entity);
+            return false;
+        });
+    }
+
+    @Override
+    public <T extends Entity> void nearbyEntitiesUntil(@NotNull Point point, double range, @NotNull Target<T> target,
+                                                       @NotNull Predicate<T> query) {
         final Long2ObjectSyncMap<List<Entity>> entities = entries[target.ordinal()].chunkEntities;
         final int minChunkX = ChunkUtils.getChunkCoordinate(point.x() - range);
         final int minChunkZ = ChunkUtils.getChunkCoordinate(point.z() - range);
@@ -142,23 +153,24 @@ final class EntityTrackerImpl implements EntityTracker {
             // Single chunk
             final var chunkEntities = (List<T>) entities.get(getChunkIndex(point));
             if (chunkEntities != null && !chunkEntities.isEmpty()) {
-                chunkEntities.forEach(entity -> {
+                for (T entity : chunkEntities) {
                     final Point position = entityPositions.get(entity.getEntityId());
-                    if (point.distanceSquared(position) <= squaredRange) query.accept(entity);
-                });
+                    if (point.distanceSquared(position) <= squaredRange && query.test(entity)) return;
+                }
             }
         } else {
             // Multiple chunks
             final int chunkRange = (int) (range / Chunk.CHUNK_SECTION_SIZE) + 1;
-            forChunksInRange(point, chunkRange, (chunkX, chunkZ) -> {
+            forChunksInRangeUntil(point, chunkRange, (chunkX, chunkZ) -> {
                 final var chunkEntities = (List<T>) entities.get(getChunkIndex(chunkX, chunkZ));
-                if (chunkEntities == null || chunkEntities.isEmpty()) return;
-                chunkEntities.forEach(entity -> {
+                if (chunkEntities == null || chunkEntities.isEmpty()) return false;
+
+                for (T entity : chunkEntities) {
                     final Point position = entityPositions.get(entity.getEntityId());
-                    if (point.distanceSquared(position) <= squaredRange) {
-                        query.accept(entity);
-                    }
-                });
+                    if (point.distanceSquared(position) <= squaredRange && query.test(entity)) return true;
+                }
+
+                return false;
             });
         }
     }
@@ -183,10 +195,10 @@ final class EntityTrackerImpl implements EntityTracker {
         double z = start.z() / Chunk.CHUNK_SECTION_SIZE;
 
         final Long2ObjectMap<List<Entity>> entities = entries[target.ordinal()].chunkEntities;
-        for(int i = 0; i < steps; i++) {
+        for (int i = 0; i < steps; i++) {
             //noinspection unchecked
             final List<T> list = (List<T>) entities.get(getChunkIndex((int) Math.floor(x), (int) Math.floor(z)));
-            if(list != null && !list.isEmpty()) {
+            if (list != null && !list.isEmpty()) {
                 list.forEach(query);
             }
 

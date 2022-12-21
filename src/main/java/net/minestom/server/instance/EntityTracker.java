@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * Defines how {@link Entity entities} are tracked within an {@link Instance instance}.
@@ -52,13 +53,16 @@ public sealed interface EntityTracker permits EntityTrackerImpl {
      * Gets the entities within a chunk range.
      */
     <T extends Entity> void nearbyEntitiesByChunkRange(@NotNull Point point, int chunkRange,
-                                           @NotNull Target<T> target, @NotNull Consumer<T> query);
+                                                       @NotNull Target<T> target, @NotNull Consumer<T> query);
 
     /**
      * Gets the entities within a range.
      */
     <T extends Entity> void nearbyEntities(@NotNull Point point, double range,
                                            @NotNull Target<T> target, @NotNull Consumer<T> query);
+
+    <T extends Entity> void nearbyEntitiesUntil(@NotNull Point point, double range,
+                                                @NotNull Target<T> target, @NotNull Predicate<T> query);
 
     <T extends Entity> void raytraceCandidates(@NotNull Point start, @NotNull Point end, @NotNull Target<T> target,
                                                @NotNull Consumer<T> query);

@@ -5,6 +5,7 @@ import net.minestom.server.coordinate.Vec;
 import net.minestom.server.instance.Chunk;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.utils.function.IntegerBiConsumer;
+import net.minestom.server.utils.function.IntegerBiPredicate;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -179,6 +180,20 @@ public final class ChunkUtils {
 
     public static void forChunksInRange(@NotNull Point point, int range, IntegerBiConsumer consumer) {
         forChunksInRange(point.chunkX(), point.chunkZ(), range, consumer);
+    }
+
+    public static void forChunksInRangeUntil(int chunkX, int chunkZ, int range, IntegerBiPredicate predicate) {
+        for (int x = -range; x <= range; ++x) {
+            for (int z = -range; z <= range; ++z) {
+                if (predicate.accept(chunkX + x, chunkZ + z)) {
+                    return;
+                }
+            }
+        }
+    }
+
+    public static void forChunksInRangeUntil(@NotNull Point point, int range, IntegerBiPredicate predicate) {
+        forChunksInRangeUntil(point.chunkX(), point.chunkZ(), range, predicate);
     }
 
     /**
