@@ -7,7 +7,7 @@ publishing {
     publications {
         create<MavenPublication>("maven") {
             groupId = "org.phantazm"
-            artifactId = "minestom-testing"
+            artifactId = "testing"
             version = "1.0"
 
             from(components["java"])
