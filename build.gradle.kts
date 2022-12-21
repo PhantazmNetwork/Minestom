@@ -43,7 +43,7 @@ tasks {
 
 dependencies {
     // Testing Framework
-    testImplementation(project(mapOf("path" to ":testing")))
+    testImplementation(project(mapOf("path" to ":minestom-testing")))
     // Only here to ensure J9 module support for extensions and our classloaders
     testCompileOnly(libs.mockito.core)
 

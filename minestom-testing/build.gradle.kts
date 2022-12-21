@@ -6,8 +6,8 @@ plugins {
 publishing {
     publications {
         create<MavenPublication>("maven") {
-            groupId = "net.minestom.testing"
-            artifactId = "testing"
+            groupId = "org.phantazm"
+            artifactId = "minestom-testing"
             version = "1.0"
 
             from(components["java"])
@@ -15,7 +15,7 @@ publishing {
     }
 }
 
-group = "net.minestom.testing"
+group = "org.phantazm"
 version = "1.0"
 
 repositories {
