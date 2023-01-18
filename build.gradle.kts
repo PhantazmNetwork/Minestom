@@ -1,3 +1,4 @@
+@Suppress("DSL_SCOPE_VIOLATION")
 plugins {
     `java-library`
     id("minestom.publishing-conventions")
@@ -6,7 +7,7 @@ plugins {
 }
 
 allprojects {
-    group = "org.phantazm"
+    group = "org.phantazm.Minestom"
     version = "1.0"
     description = "Lightweight and multi-threaded Minecraft server implementation"
 }

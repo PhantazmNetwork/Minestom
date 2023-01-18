@@ -7,7 +7,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.jetbrains.annotations.Nullable;
+
 import java.util.*;
+
 import net.minestom.server.entity.Entity;
 
 /**
@@ -51,7 +53,7 @@ public final class BoundingBox implements Shape {
     @Override
     @ApiStatus.Experimental
     public boolean intersectBoxSwept(@NotNull Point rayStart, @NotNull Point rayDirection, @NotNull Point shapePos, @NotNull BoundingBox moving, @NotNull SweepResult finalResult) {
-        if (RayUtils.BoundingBoxIntersectionCheck(moving, rayStart, rayDirection, this, shapePos, finalResult) ) {
+        if (RayUtils.BoundingBoxIntersectionCheck(moving, rayStart, rayDirection, this, shapePos, finalResult)) {
             finalResult.collidedShapePosition = shapePos;
             finalResult.collidedShape = this;
             finalResult.blockType = null;
@@ -85,6 +87,16 @@ public final class BoundingBox implements Shape {
         Point relativeEnd = this.relativeEnd;
         if (relativeEnd == null) this.relativeEnd = relativeEnd = offset.add(width, height, depth);
         return relativeEnd;
+    }
+
+    @Override
+    public boolean isFullBlock() {
+        return false;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return false;
     }
 
     @Override

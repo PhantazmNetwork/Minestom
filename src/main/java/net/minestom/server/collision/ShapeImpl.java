@@ -22,6 +22,9 @@ final class ShapeImpl implements Shape {
     private final Registry.BlockEntry blockEntry;
     private Block block;
 
+    private final boolean isFull;
+    private final boolean isEmpty;
+
     private ShapeImpl(BoundingBox[] boundingBoxes, Registry.BlockEntry blockEntry) {
         this.blockSections = boundingBoxes;
         this.blockEntry = blockEntry;
@@ -42,6 +45,9 @@ final class ShapeImpl implements Shape {
             this.relativeStart = new Vec(minX, minY, minZ);
             this.relativeEnd = new Vec(maxX, maxY, maxZ);
         }
+
+        this.isFull = boundingBoxes.length == 1 && relativeStart.isZero() && relativeEnd.samePoint(1, 1, 1);
+        this.isEmpty = boundingBoxes.length == 1 && relativeStart.samePoint(1, 1, 1) && relativeEnd.isZero();
     }
 
     static ShapeImpl parseBlockFromRegistry(String str, Registry.BlockEntry blockEntry) {
@@ -80,6 +86,16 @@ final class ShapeImpl implements Shape {
     @Override
     public @NotNull Point relativeEnd() {
         return relativeEnd;
+    }
+
+    @Override
+    public boolean isFullBlock() {
+        return isFull;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return isEmpty;
     }
 
     @Override
