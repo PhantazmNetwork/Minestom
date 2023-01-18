@@ -1,5 +1,6 @@
 package net.minestom.server.instance;
 
+import net.minestom.server.Viewable;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.entity.*;
 import org.jetbrains.annotations.ApiStatus;
@@ -76,6 +77,12 @@ public sealed interface EntityTracker permits EntityTrackerImpl {
     @UnmodifiableView
     default @NotNull Set<@NotNull Entity> entities() {
         return entities(Target.ENTITIES);
+    }
+
+    @NotNull Viewable viewable(@NotNull List<@NotNull SharedInstance> sharedInstances, int chunkX, int chunkZ);
+
+    default @NotNull Viewable viewable(int chunkX, int chunkZ) {
+        return viewable(List.of(), chunkX, chunkZ);
     }
 
     /**
