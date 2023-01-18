@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 final class ShapeImpl implements Shape {
     private static final Pattern PATTERN = Pattern.compile("\\d.\\d{1,3}", Pattern.MULTILINE);
     private final BoundingBox[] blockSections;
-    private List<BoundingBox> sectionsView;
+    private final List<BoundingBox> sectionsView;
     private final Point relativeStart, relativeEnd;
 
     private final Registry.BlockEntry blockEntry;
@@ -48,6 +48,8 @@ final class ShapeImpl implements Shape {
 
         this.isFull = boundingBoxes.length == 1 && relativeStart.isZero() && relativeEnd.samePoint(1, 1, 1);
         this.isEmpty = boundingBoxes.length == 1 && relativeStart.samePoint(1, 1, 1) && relativeEnd.isZero();
+
+        this.sectionsView = List.of(boundingBoxes);
     }
 
     static ShapeImpl parseBlockFromRegistry(String str, Registry.BlockEntry blockEntry) {
@@ -100,8 +102,7 @@ final class ShapeImpl implements Shape {
 
     @Override
     public @UnmodifiableView @NotNull List<BoundingBox> childBounds() {
-        return blockSections.length <= 1 ? Collections.emptyList() : (sectionsView == null ? sectionsView = List
-                .of(blockSections) : sectionsView);
+        return sectionsView;
     }
 
     @Override

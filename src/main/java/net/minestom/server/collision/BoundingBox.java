@@ -39,7 +39,7 @@ public final class BoundingBox implements Shape {
 
     @Override
     public @UnmodifiableView @NotNull List<BoundingBox> childBounds() {
-        return Collections.emptyList();
+        return List.of(this);
     }
 
     @Override
