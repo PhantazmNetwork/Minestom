@@ -529,8 +529,6 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
 
         // Entity tick
         {
-            preTick(time);
-
             // Cache the number of "gravity tick"
             velocityTick();
 
@@ -552,15 +550,6 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         if (!Cooldown.hasCooldown(time, lastAbsoluteSynchronizationTime, getSynchronizationCooldown())) {
             synchronizePosition(false);
         }
-    }
-
-    /**
-     * Tick for actions that should run before velocityTick(). Does nothing by default and is intended solely to be
-     * overridden by subclasses.
-     *
-     * @param time the current time
-     */
-    protected void preTick(long time) {
     }
 
     private void velocityTick() {
