@@ -265,7 +265,7 @@ final class BlockCollision {
         final Block currentBlock = getter.getBlock(blockX, blockY, blockZ, Block.Getter.Condition.TYPE);
         final Shape currentShape = currentBlock.registry().collisionShape();
 
-        final boolean currentCollidable = !currentShape.relativeEnd().isZero();
+        final boolean currentCollidable = !currentShape.isEmpty();
         final boolean currentShort = currentShape.relativeEnd().y() < 0.5;
 
         // only consider the block below if our current shape is sufficiently short

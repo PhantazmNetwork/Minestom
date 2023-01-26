@@ -570,7 +570,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         final Pos newPosition;
         final Vec newVelocity;
         if (this.hasPhysics) {
-            final var physicsResult = CollisionUtils.handlePhysics(this, deltaPos, null);
+            final var physicsResult = CollisionUtils.handlePhysics(this, deltaPos, lastPhysicsResult);
             this.lastPhysicsResult = physicsResult;
             if (!PlayerUtils.isSocketClient(this))
                 this.onGround = physicsResult.isOnGround();

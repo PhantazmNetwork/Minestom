@@ -47,7 +47,7 @@ final class ShapeImpl implements Shape {
         }
 
         this.isFull = boundingBoxes.length == 1 && relativeStart.isZero() && relativeEnd.samePoint(1, 1, 1);
-        this.isEmpty = boundingBoxes.length == 1 && relativeStart.samePoint(1, 1, 1) && relativeEnd.isZero();
+        this.isEmpty = relativeEnd.isZero();
 
         this.sectionsView = List.of(boundingBoxes);
     }
