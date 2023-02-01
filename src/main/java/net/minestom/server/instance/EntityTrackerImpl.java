@@ -206,7 +206,7 @@ final class EntityTrackerImpl implements EntityTracker {
         int lastChunkZ = start.chunkZ();
 
         final Long2ObjectMap<List<Entity>> entities = entries[target.ordinal()].chunkEntities;
-        for (int i = 0; i < step; i++) {
+        for (int i = 0; i <= (int) Math.ceil(step); i++) {
             int chunkX = (int) Math.floor(x);
             int chunkZ = (int) Math.floor(z);
 
@@ -247,6 +247,7 @@ final class EntityTrackerImpl implements EntityTracker {
     @SuppressWarnings("unchecked")
     private static <T extends Entity> void handleChunk(Long2ObjectMap<List<Entity>> entities, int cx, int cz,
                                                        Consumer<T> query) {
+        System.out.println("cx: " + cx + ", cz: " + cz);
         final List<T> list = (List<T>) entities.get(getChunkIndex(cx, cz));
         if (list != null && !list.isEmpty()) {
             list.forEach(query);
