@@ -1,12 +1,15 @@
 package net.minestom.server.instance;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.Viewable;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.Player;
+import net.minestom.server.instance.block.Block;
+import net.minestom.server.network.ConnectionManager;
 import net.minestom.server.utils.chunk.ChunkUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -182,32 +185,71 @@ final class EntityTrackerImpl implements EntityTracker {
     @Override
     public <T extends Entity> void raytraceCandidates(@NotNull Point start, @NotNull Point end,
                                                       @NotNull Target<T> target, @NotNull Consumer<T> query) {
-        //based on 2D DDA algorithm, run on the projections of start and end onto the XZ plane
-        //units are in chunks, 1 chunk = 16 blocks
-        final double dx = (end.x() - start.x()) / Chunk.CHUNK_SECTION_SIZE;
-        final double dz = (end.z() - start.z()) / Chunk.CHUNK_SECTION_SIZE;
+        double startX = start.x() / CHUNK_SIZE_X;
+        double startZ = start.z() / CHUNK_SIZE_Z;
 
-        final double adx = Math.abs(dx);
-        final double adz = Math.abs(dz);
+        double endX = end.x() / CHUNK_SIZE_X;
+        double endZ = end.z() / CHUNK_SIZE_Z;
 
-        final int steps = (int) Math.ceil(Math.max(adx, adz));
+        double dx = endX - startX;
+        double dz = endZ - startZ;
 
-        final double xi = dx / steps;
-        final double zi = dz / steps;
+        double step = Math.max(Math.abs(dx), Math.abs(dz));
 
-        double x = start.x() / Chunk.CHUNK_SECTION_SIZE;
-        double z = start.z() / Chunk.CHUNK_SECTION_SIZE;
+        double xi = dx / step;
+        double zi = dz / step;
 
-        final Long2ObjectSyncMap<List<Entity>> entities = entries[target.ordinal()].chunkEntities;
-        for (int i = 0; i < steps; i++) {
-            //noinspection unchecked
-            final List<T> list = (List<T>) entities.get(getChunkIndex((int) Math.floor(x), (int) Math.floor(z)));
-            if (list != null && !list.isEmpty()) {
-                list.forEach(query);
+        double x = startX;
+        double z = startZ;
+
+        int lastChunkX = start.chunkX();
+        int lastChunkZ = start.chunkZ();
+
+        final Long2ObjectMap<List<Entity>> entities = entries[target.ordinal()].chunkEntities;
+        for (int i = 0; i < step; i++) {
+            int chunkX = (int) Math.floor(x);
+            int chunkZ = (int) Math.floor(z);
+
+            if (chunkX != lastChunkX && chunkZ != lastChunkZ) {
+                double firstX = chunkX + 0.5;
+                double firstZ = lastChunkZ + 0.5;
+
+                double secondX = lastChunkX + 0.5;
+                double secondZ = chunkZ + 0.5;
+
+                double firstDistance = distanceSquared(x, z, firstX, firstZ);
+                double secondDistance = distanceSquared(x, z, secondX, secondZ);
+
+                if (firstDistance < secondDistance) {
+                    handleChunk(entities, chunkX, lastChunkZ, query);
+                } else {
+                    handleChunk(entities, lastChunkX, chunkZ, query);
+                }
             }
+
+            handleChunk(entities, chunkX, chunkZ, query);
 
             x += xi;
             z += zi;
+
+            lastChunkX = chunkX;
+            lastChunkZ = chunkZ;
+        }
+    }
+
+    private static double distanceSquared(double x1, double z1, double x2, double z2) {
+        double diffX = x1 - x2;
+        double diffZ = z1 - z2;
+
+        return diffX * diffX + diffZ * diffZ;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Entity> void handleChunk(Long2ObjectMap<List<Entity>> entities, int cx, int cz,
+                                                       Consumer<T> query) {
+        final List<T> list = (List<T>) entities.get(getChunkIndex(cx, cz));
+        if (list != null && !list.isEmpty()) {
+            list.forEach(query);
         }
     }
 
