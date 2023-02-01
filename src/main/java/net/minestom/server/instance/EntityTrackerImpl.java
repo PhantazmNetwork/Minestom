@@ -247,7 +247,6 @@ final class EntityTrackerImpl implements EntityTracker {
     @SuppressWarnings("unchecked")
     private static <T extends Entity> void handleChunk(Long2ObjectMap<List<Entity>> entities, int cx, int cz,
                                                        Consumer<T> query) {
-        System.out.println("cx: " + cx + ", cz: " + cz);
         final List<T> list = (List<T>) entities.get(getChunkIndex(cx, cz));
         if (list != null && !list.isEmpty()) {
             list.forEach(query);
