@@ -7,6 +7,7 @@ import net.minestom.server.collision.BoundingBox;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.damage.DamageType;
+import net.minestom.server.entity.damage.EntityDamage;
 import net.minestom.server.entity.metadata.LivingEntityMeta;
 import net.minestom.server.event.EventDispatcher;
 import net.minestom.server.event.entity.EntityDamageEvent;
@@ -69,9 +70,19 @@ public class LivingEntity extends Entity implements EquipmentHandler {
     private long lastFireDamageTime;
 
     /**
+     * Last time this entity was attacked by another entity
+     */
+    private long lastEntityDamageTime;
+
+    /**
      * Period, in ms, between two fire damage applications
      */
     private long fireDamagePeriod = 1000L;
+
+    /**
+     * Shortest period this entity may receive attack damage from another entity
+     */
+    private long entityDamagePeriod = 500L;
 
     private Team team;
 
@@ -336,10 +347,21 @@ public class LivingEntity extends Entity implements EquipmentHandler {
             return false;
         }
 
+        if (type instanceof EntityDamage entityDamage) {
+            if (!(this.lastDamageSource instanceof EntityDamage lastEntityDamage) ||
+                    entityDamage.getSource() != lastEntityDamage.getSource()) {
+                long timeSinceLastAttacked = System.currentTimeMillis() - lastEntityDamageTime;
+                if (timeSinceLastAttacked < entityDamagePeriod) {
+                    return false;
+                }
+            }
+        }
+
         EntityDamageEvent entityDamageEvent = new EntityDamageEvent(this, type, value, type.getSound(this));
         EventDispatcher.callCancellable(entityDamageEvent, () -> {
             // Set the last damage type since the event is not cancelled
             this.lastDamageSource = entityDamageEvent.getDamageType();
+            this.lastEntityDamageTime = System.currentTimeMillis();
 
             float remainingDamage = entityDamageEvent.getDamage();
 
@@ -609,6 +631,14 @@ public class LivingEntity extends Entity implements EquipmentHandler {
      */
     public void setFireDamagePeriod(long fireDamagePeriod, @NotNull TemporalUnit temporalUnit) {
         setFireDamagePeriod(Duration.of(fireDamagePeriod, temporalUnit));
+    }
+
+    public long getEntityDamagePeriod() {
+        return entityDamagePeriod;
+    }
+
+    public void setEntityDamagePeriod(long entityDamagePeriod) {
+        this.entityDamagePeriod = entityDamagePeriod;
     }
 
     /**
