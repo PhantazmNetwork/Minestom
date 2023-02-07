@@ -17,7 +17,6 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 @ApiStatus.Experimental
 public final class CollisionUtils {
-
     /**
      * Moves an entity with physics applied (ie checking against blocks)
      * <p>
