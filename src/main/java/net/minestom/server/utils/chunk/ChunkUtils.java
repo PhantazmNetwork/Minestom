@@ -225,7 +225,7 @@ public final class ChunkUtils {
         int lastChunkX = start.chunkX();
         int lastChunkZ = start.chunkZ();
 
-        for (int i = 0; i <= step; i++) {
+        for (int i = 0; i <= (int) Math.ceil(step); i++) {
             int chunkX = (int) Math.floor(x);
             int chunkZ = (int) Math.floor(z);
 
