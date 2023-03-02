@@ -185,63 +185,7 @@ final class EntityTrackerImpl implements EntityTracker {
     @Override
     public <T extends Entity> void raytraceCandidates(@NotNull Point start, @NotNull Point end,
                                                       @NotNull Target<T> target, @NotNull Consumer<T> query) {
-        double startX = start.x() / CHUNK_SIZE_X;
-        double startZ = start.z() / CHUNK_SIZE_Z;
-
-        double endX = end.x() / CHUNK_SIZE_X;
-        double endZ = end.z() / CHUNK_SIZE_Z;
-
-        double dx = endX - startX;
-        double dz = endZ - startZ;
-
-        double step = Math.max(Math.abs(dx), Math.abs(dz));
-
-        double xi = dx / step;
-        double zi = dz / step;
-
-        double x = startX;
-        double z = startZ;
-
-        int lastChunkX = start.chunkX();
-        int lastChunkZ = start.chunkZ();
-
-        final Long2ObjectMap<List<Entity>> entities = entries[target.ordinal()].chunkEntities;
-        for (int i = 0; i <= (int) Math.ceil(step); i++) {
-            int chunkX = (int) Math.floor(x);
-            int chunkZ = (int) Math.floor(z);
-
-            if (chunkX != lastChunkX && chunkZ != lastChunkZ) {
-                double firstX = chunkX + 0.5;
-                double firstZ = lastChunkZ + 0.5;
-
-                double secondX = lastChunkX + 0.5;
-                double secondZ = chunkZ + 0.5;
-
-                double firstDistance = distanceSquared(x, z, firstX, firstZ);
-                double secondDistance = distanceSquared(x, z, secondX, secondZ);
-
-                if (firstDistance < secondDistance) {
-                    handleChunk(entities, chunkX, lastChunkZ, query);
-                } else {
-                    handleChunk(entities, lastChunkX, chunkZ, query);
-                }
-            }
-
-            handleChunk(entities, chunkX, chunkZ, query);
-
-            x += xi;
-            z += zi;
-
-            lastChunkX = chunkX;
-            lastChunkZ = chunkZ;
-        }
-    }
-
-    private static double distanceSquared(double x1, double z1, double x2, double z2) {
-        double diffX = x1 - x2;
-        double diffZ = z1 - z2;
-
-        return diffX * diffX + diffZ * diffZ;
+        ChunkUtils.raytraceCandidates(start, end, (x, z) -> handleChunk(entries[target.ordinal()].chunkEntities, x, z, query));
     }
 
     @SuppressWarnings("unchecked")
