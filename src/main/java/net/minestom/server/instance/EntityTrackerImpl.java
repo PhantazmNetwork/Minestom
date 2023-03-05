@@ -185,7 +185,12 @@ final class EntityTrackerImpl implements EntityTracker {
     @Override
     public <T extends Entity> void raytraceCandidates(@NotNull Point start, @NotNull Point end,
                                                       @NotNull Target<T> target, @NotNull Consumer<T> query) {
-        ChunkUtils.raytraceCandidates(start, end, (x, z) -> handleChunk(entries[target.ordinal()].chunkEntities, x, z, query));
+        Long2ObjectSyncMap<List<Entity>> entities = entries[target.ordinal()].chunkEntities;
+        if (entities == null || entities.isEmpty()) {
+            return;
+        }
+
+        ChunkUtils.raytraceCandidates(start, end, (x, z) -> handleChunk(entities, x, z, query));
     }
 
     @SuppressWarnings("unchecked")
