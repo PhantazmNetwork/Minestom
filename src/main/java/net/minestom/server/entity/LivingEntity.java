@@ -334,7 +334,8 @@ public class LivingEntity extends Entity implements EquipmentHandler {
     }
 
     /**
-     * Damages the entity by a value, the type of the damage also has to be specified.
+     * Damages the entity by a value, the type of the damage also has to be specified. This will apply damage based on
+     * the entity's armor value.
      *
      * @param type  the damage type
      * @param value the amount of damage
@@ -363,7 +364,12 @@ public class LivingEntity extends Entity implements EquipmentHandler {
             this.lastDamageSource = entityDamageEvent.getDamageType();
             this.lastEntityDamageTime = System.currentTimeMillis();
 
-            float remainingDamage = entityDamageEvent.getDamage();
+            float defensePoints = getAttributeValue(Attribute.ARMOR);
+            float toughness = getAttributeValue(Attribute.ARMOR_TOUGHNESS);
+            float damage = entityDamageEvent.getDamage();
+
+            float remainingDamage = damage *
+                    (1F - (Math.max(defensePoints / 5F, defensePoints - ((4F * damage) / (toughness + 8F))) / 25F));
 
             if (entityDamageEvent.shouldAnimate()) {
                 sendPacketToViewersAndSelf(new EntityAnimationPacket(getEntityId(), EntityAnimationPacket.Animation.TAKE_DAMAGE));
