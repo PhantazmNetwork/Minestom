@@ -334,14 +334,15 @@ public class LivingEntity extends Entity implements EquipmentHandler {
     }
 
     /**
-     * Damages the entity by a value, the type of the damage also has to be specified. This will apply damage based on
-     * the entity's armor value.
+     * Damages the entity by a value, the type of the damage also has to be specified. This may or may not take armor
+     * into account.
      *
-     * @param type  the damage type
-     * @param value the amount of damage
+     * @param type        the damage type
+     * @param value       the amount of damage
+     * @param bypassArmor whether to consider armor in the final damage calculation
      * @return true if damage has been applied, false if it didn't
      */
-    public boolean damage(@NotNull DamageType type, float value) {
+    public boolean damage(@NotNull DamageType type, float value, boolean bypassArmor) {
         if (isDead())
             return false;
         if (isInvulnerable() || isImmune(type)) {
@@ -364,12 +365,18 @@ public class LivingEntity extends Entity implements EquipmentHandler {
             this.lastDamageSource = entityDamageEvent.getDamageType();
             this.lastEntityDamageTime = System.currentTimeMillis();
 
-            float defensePoints = getAttributeValue(Attribute.ARMOR);
-            float toughness = getAttributeValue(Attribute.ARMOR_TOUGHNESS);
             float damage = entityDamageEvent.getDamage();
+            float remainingDamage;
+            if (!bypassArmor) {
+                float defensePoints = getAttributeValue(Attribute.ARMOR);
+                float toughness = getAttributeValue(Attribute.ARMOR_TOUGHNESS);
 
-            float remainingDamage = damage *
-                    (1F - (Math.max(defensePoints / 5F, defensePoints - ((4F * damage) / (toughness + 8F))) / 25F));
+
+                remainingDamage = damage *
+                        (1F - (Math.max(defensePoints / 5F, defensePoints - ((4F * damage) / (toughness + 8F))) / 25F));
+            } else {
+                remainingDamage = damage;
+            }
 
             if (entityDamageEvent.shouldAnimate()) {
                 sendPacketToViewersAndSelf(new EntityAnimationPacket(getEntityId(), EntityAnimationPacket.Animation.TAKE_DAMAGE));
@@ -408,6 +415,17 @@ public class LivingEntity extends Entity implements EquipmentHandler {
         });
 
         return !entityDamageEvent.isCancelled();
+    }
+
+    /**
+     * Overload of {@link LivingEntity#damage(DamageType, float, boolean)} that bypasses armor.
+     *
+     * @param type  the damage type
+     * @param value the amount of damage
+     * @return true if damage has been applied, false if it didn't
+     */
+    public boolean damage(@NotNull DamageType type, float value) {
+        return damage(type, value, true);
     }
 
     /**
