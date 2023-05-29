@@ -420,6 +420,20 @@ public class EntityBlockPhysicsIntegrationTest {
     }
 
     @Test
+    public void entitySlabWalkCheck(Env env) {
+        Vec velocity = new Vec(0.0, 0.0, 1);
+        Pos position = new Pos(0.5, 1, 0.5);
+        BoundingBox boundingBox = new Entity(EntityType.ZOMBIE).getBoundingBox();
+
+        SweepResult sweepResultFinal = new SweepResult(1, 0, 0, 0, null);
+
+        Shape shape = Block.DARK_OAK_SLAB.registry().collisionShape();
+        shape.intersectBoxSwept(position, velocity, new Vec(0, 0, 1), boundingBox, sweepResultFinal);
+
+        assertNull(sweepResultFinal.collidedShape);
+    }
+
+    @Test
     public void entityPhysicsCheckEdgeClip(Env env) {
         var instance = env.createFlatInstance();
         instance.setBlock(1, 43, 1, Block.STONE);
