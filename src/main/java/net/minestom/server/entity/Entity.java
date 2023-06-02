@@ -1627,6 +1627,10 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
      * @param z        knockback on z axle, for default knockback use the following formula <pre>-cos(attacker.yaw * (pi/180))</pre>
      */
     public void takeKnockback(float strength, final double x, final double z) {
+        takeKnockback(strength, false, x, z);
+    }
+
+    public void takeKnockback(float strength, boolean horizontal, final double x, final double z) {
         if (strength > 0) {
             //TODO check possible side effects of unnatural TPS (other than 20TPS)
             strength *= MinecraftServer.TICK_PER_SECOND;
@@ -1634,21 +1638,9 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
             final double verticalLimit = .4d * MinecraftServer.TICK_PER_SECOND;
 
             setVelocity(new Vec(velocity.x() / 2d - velocityModifier.x(),
-                    onGround ? Math.min(verticalLimit, velocity.y() / 2d + strength) : velocity.y(),
+                    onGround && !horizontal ? Math.min(verticalLimit, velocity.y() / 2d + strength) : velocity.y(),
                     velocity.z() / 2d - velocityModifier.z()
             ));
-        }
-    }
-
-    public void takeHorizontalKnockback(float strength, final double x, final double z) {
-        if (strength > 0) {
-            strength *= MinecraftServer.TICK_PER_SECOND;
-            final Vec velocityModifier = new Vec(x, z).normalize().mul(strength);
-            final double verticalLimit = .4d * MinecraftServer.TICK_PER_SECOND;
-
-            setVelocity(new Vec(velocity.x() / 2d - velocityModifier.x(),
-                    velocity.y(),
-                    velocity.z() / 2d - velocityModifier.z()));
         }
     }
 

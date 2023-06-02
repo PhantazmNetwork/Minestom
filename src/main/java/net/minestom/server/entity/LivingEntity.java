@@ -737,14 +737,8 @@ public class LivingEntity extends Entity implements EquipmentHandler {
      * @param z        knockback on z axle, for default knockback use the following formula <pre>-cos(attacker.yaw * (pi/180))</pre>
      */
     @Override
-    public void takeKnockback(float strength, final double x, final double z) {
+    public void takeKnockback(float strength, boolean horizontal, final double x, final double z) {
         strength *= 1 - getAttributeValue(Attribute.KNOCKBACK_RESISTANCE);
-        super.takeKnockback(strength, x, z);
-    }
-
-    @Override
-    public void takeHorizontalKnockback(float strength, double x, double z) {
-        strength *= 1 - getAttributeValue(Attribute.KNOCKBACK_RESISTANCE);
-        super.takeHorizontalKnockback(strength, x, z);
+        super.takeKnockback(strength, horizontal, x, z);
     }
 }
