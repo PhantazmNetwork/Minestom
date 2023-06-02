@@ -741,4 +741,10 @@ public class LivingEntity extends Entity implements EquipmentHandler {
         strength *= 1 - getAttributeValue(Attribute.KNOCKBACK_RESISTANCE);
         super.takeKnockback(strength, x, z);
     }
+
+    @Override
+    public void takeHorizontalKnockback(float strength, double x, double z) {
+        strength *= 1 - getAttributeValue(Attribute.KNOCKBACK_RESISTANCE);
+        super.takeHorizontalKnockback(strength, x, z);
+    }
 }

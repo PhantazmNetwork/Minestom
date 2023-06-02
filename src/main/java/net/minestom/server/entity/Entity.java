@@ -1640,6 +1640,18 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         }
     }
 
+    public void takeHorizontalKnockback(float strength, final double x, final double z) {
+        if (strength > 0) {
+            strength *= MinecraftServer.TICK_PER_SECOND;
+            final Vec velocityModifier = new Vec(x, z).normalize().mul(strength);
+            final double verticalLimit = .4d * MinecraftServer.TICK_PER_SECOND;
+
+            setVelocity(new Vec(velocity.x() / 2d - velocityModifier.x(),
+                    velocity.y(),
+                    velocity.z() / 2d - velocityModifier.z()));
+        }
+    }
+
     /**
      * Gets the line of sight of the entity.
      *
