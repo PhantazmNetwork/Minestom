@@ -65,11 +65,6 @@ public class LivingEntity extends Entity implements EquipmentHandler {
     private long fireExtinguishTime;
 
     /**
-     * Last time the fire damage was applied
-     */
-    private long lastFireDamageTime;
-
-    /**
      * Last time this entity was attacked by another entity
      */
     private long lastEntityDamageTime;
@@ -200,15 +195,8 @@ public class LivingEntity extends Entity implements EquipmentHandler {
 
     @Override
     public void update(long time) {
-        if (isOnFire()) {
-            if (time > fireExtinguishTime) {
-                setOnFire(false);
-            } else {
-                if (time - lastFireDamageTime > fireDamagePeriod) {
-                    damage(DamageType.ON_FIRE, 1.0f);
-                    lastFireDamageTime = time;
-                }
-            }
+        if (isOnFire() && time > fireExtinguishTime) {
+            setOnFire(false);
         }
 
         // Items picking
