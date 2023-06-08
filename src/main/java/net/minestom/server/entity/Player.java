@@ -125,6 +125,11 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
     private DimensionType dimensionType;
     private GameMode gameMode;
     private DeathLocation deathLocation;
+
+    private long lastHurtTime;
+
+    private long minimumHurtDelay = 500L;
+
     /**
      * Keeps track of what chunks are sent to the client, this defines the center of the loaded area
      * in the range of {@link MinecraftServer#getChunkViewDistance()}
@@ -388,6 +393,17 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
 
         // Tick event
         EventDispatcher.call(new PlayerTickEvent(this));
+    }
+
+    @Override
+    public boolean damage(@NotNull DamageType type, float value, boolean bypassArmor) {
+        long currentTime;
+        if ((currentTime = System.currentTimeMillis() - lastHurtTime) < minimumHurtDelay) {
+            return false;
+        }
+
+        lastHurtTime = currentTime;
+        return super.damage(type, value, bypassArmor);
     }
 
     @Override
