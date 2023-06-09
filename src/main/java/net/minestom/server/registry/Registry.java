@@ -10,6 +10,7 @@ import net.minestom.server.entity.EntitySpawnType;
 import net.minestom.server.entity.EquipmentSlot;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.item.Material;
+import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.utils.NamespaceID;
 import net.minestom.server.utils.collection.ObjectArray;
 import net.minestom.server.utils.validate.Check;
@@ -168,6 +169,7 @@ public final class Registry {
         private final double jumpFactor;
         private final boolean air;
         private final boolean solid;
+        private final SoundEvent stepSound;
         private final boolean liquid;
         private final String blockEntity;
         private final int blockEntityId;
@@ -188,6 +190,7 @@ public final class Registry {
             this.jumpFactor = main.getDouble("jumpFactor", 1);
             this.air = main.getBoolean("air", false);
             this.solid = main.getBoolean("solid");
+            this.stepSound = SoundEvent.fromId(main.getInt("stepSoundId"));
             this.liquid = main.getBoolean("liquid", false);
             {
                 Properties blockEntity = main.section("blockEntity");
