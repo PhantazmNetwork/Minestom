@@ -256,6 +256,10 @@ public final class Registry {
             return solid;
         }
 
+        public SoundEvent getStepSound() {
+            return stepSound;
+        }
+
         public boolean isLiquid() {
             return liquid;
         }

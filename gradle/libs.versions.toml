@@ -59,7 +59,7 @@ kotlin-stdlib-jdk8 = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib-jdk
 # Miscellaneous
 hydrazine = { group = "com.github.MadMartian", name = "hydrazine-path-finding", version.ref = "hydrazine" }
 dependencyGetter = { group = "com.github.Minestom", name = "DependencyGetter", version.ref = "dependencyGetter" }
-minestomData = { group = "com.github.PhantazmNetwork", name = "MinestomDataGenerator", version.ref = "minestomData" }
+minestomData = { group = "org.phantazm", name = "MinestomDataGenerator", version.ref = "minestomData" }
 jetbrainsAnnotations = { group = "org.jetbrains", name = "annotations", version.ref = "jetbrainsAnnotations" }
 
 # Logging
