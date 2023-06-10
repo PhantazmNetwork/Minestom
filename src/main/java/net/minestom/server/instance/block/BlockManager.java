@@ -43,9 +43,7 @@ public final class BlockManager {
         BlockHandler handler = getHandler(namespace);
         if (handler == null) {
             if (dummyWarning.add(namespace)) {
-                LOGGER.warn("""
-                        Block {} does not have any corresponding handler, default to dummy.
-                        You may want to register a handler for this namespace to prevent any data loss.""", namespace);
+
             }
             handler = BlockHandler.Dummy.get(namespace);
         }
