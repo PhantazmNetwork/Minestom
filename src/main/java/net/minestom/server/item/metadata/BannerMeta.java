@@ -133,7 +133,7 @@ public record BannerMeta(TagReadable readable) implements ItemMetaView<BannerMet
          */
         public @NotNull NBTCompound asCompound() {
             return NBT.Compound(Map.of(
-                    "Color", NBT.Byte(color.ordinal()),
+                    "Color", NBT.Int(color.ordinal()),
                     "Pattern", NBT.String(pattern.identifier())
             ));
         }
