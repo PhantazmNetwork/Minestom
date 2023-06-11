@@ -1944,7 +1944,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
      *
      * @return a {@link PlayerInfoUpdatePacket} to add the player
      */
-    protected @NotNull PlayerInfoUpdatePacket getAddPlayerToList() {
+    public @NotNull PlayerInfoUpdatePacket getAddPlayerToList() {
         return new PlayerInfoUpdatePacket(EnumSet.of(PlayerInfoUpdatePacket.Action.ADD_PLAYER, PlayerInfoUpdatePacket.Action.UPDATE_LISTED),
                 List.of(infoEntry()));
     }
@@ -1954,7 +1954,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
      *
      * @return a {@link PlayerInfoRemovePacket} to remove the player
      */
-    protected @NotNull PlayerInfoRemovePacket getRemovePlayerToList() {
+    public @NotNull PlayerInfoRemovePacket getRemovePlayerToList() {
         return new PlayerInfoRemovePacket(getUuid());
     }
 
