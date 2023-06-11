@@ -117,7 +117,7 @@ public record BannerMeta(TagReadable readable) implements ItemMetaView<BannerMet
          * @return A new created banner pattern.
          */
         public static @NotNull Pattern fromCompound(@NotNull NBTCompound compound) {
-            DyeColor color = compound.containsKey("Color") ? DyeColor.values()[compound.getByte("Color")] : DyeColor.WHITE;
+            DyeColor color = compound.containsKey("Color") ? DyeColor.values()[compound.getInt("Color")] : DyeColor.WHITE;
             BannerPattern type;
             if (compound.containsKey("Pattern")) {
                 BannerPattern pattern = BannerPattern.fromIdentifier(compound.getString("Pattern"));
