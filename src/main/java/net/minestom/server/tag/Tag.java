@@ -2,6 +2,7 @@ package net.minestom.server.tag;
 
 import net.kyori.adventure.text.Component;
 import net.minestom.server.item.ItemStack;
+import net.minestom.server.item.metadata.BannerMeta;
 import net.minestom.server.utils.collection.AutoIncrementMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
@@ -276,6 +277,10 @@ public class Tag<T> {
 
     public static @NotNull Tag<Component> Component(@NotNull String key) {
         return tag(key, Serializers.COMPONENT);
+    }
+
+    public static @NotNull Tag<BannerMeta.Pattern> Pattern(@NotNull String key) {
+        return tag(key, Serializers.PATTERN);
     }
 
     /**
