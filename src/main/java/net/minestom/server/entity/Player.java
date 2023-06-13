@@ -398,7 +398,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
     @Override
     public boolean damage(@NotNull DamageType type, float value, boolean bypassArmor) {
         long currentTime;
-        if ((currentTime = System.currentTimeMillis() - lastHurtTime) < minimumHurtDelay) {
+        if (((currentTime = System.currentTimeMillis()) - lastHurtTime) < minimumHurtDelay) {
             return false;
         }
 
