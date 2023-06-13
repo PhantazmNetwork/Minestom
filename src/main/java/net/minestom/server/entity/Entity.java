@@ -947,6 +947,10 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         }
     }
 
+    public void setHasPhysics(boolean hasPhysics) {
+        this.hasPhysics = hasPhysics;
+    }
+
     /**
      * Gets the gravity drag per tick.
      *
