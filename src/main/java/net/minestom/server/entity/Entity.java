@@ -56,7 +56,6 @@ import net.minestom.server.utils.async.AsyncUtils;
 import net.minestom.server.utils.block.BlockIterator;
 import net.minestom.server.utils.chunk.ChunkCache;
 import net.minestom.server.utils.chunk.ChunkUtils;
-import net.minestom.server.utils.entity.EntityUtils;
 import net.minestom.server.utils.player.PlayerUtils;
 import net.minestom.server.utils.time.Cooldown;
 import net.minestom.server.utils.time.TimeUnit;
@@ -905,7 +904,9 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     private void removeFromInstance(Instance instance) {
         EventDispatcher.call(new RemoveEntityFromInstanceEvent(instance, this));
         instance.getEntityTracker().unregister(this, trackingTarget, trackingUpdate);
-        this.viewEngine.forManuals(this::removeViewer);
+        this.viewEngine.forEachThenClear(player -> {
+            updateOldViewer(player);
+        });
     }
 
     /**
