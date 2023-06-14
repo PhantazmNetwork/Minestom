@@ -128,7 +128,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
 
     private long lastHurtTime;
 
-    private long minimumHurtDelay = 500L;
+    private long minimumHurtDelay = 250L;
 
     /**
      * Keeps track of what chunks are sent to the client, this defines the center of the loaded area
@@ -397,8 +397,8 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
 
     @Override
     public boolean damage(@NotNull DamageType type, float value, boolean bypassArmor) {
-        long currentTime;
-        if (((currentTime = System.currentTimeMillis()) - lastHurtTime) < minimumHurtDelay) {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastHurtTime < minimumHurtDelay) {
             return false;
         }
 
@@ -654,6 +654,10 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
     @Override
     public CompletableFuture<Void> setInstance(@NotNull Instance instance) {
         return setInstance(instance, this.instance != null ? getPosition() : getRespawnPoint());
+    }
+
+    public void setMinimumHurtDelay(long minimumHurtDelay) {
+        this.minimumHurtDelay = minimumHurtDelay;
     }
 
     /**
