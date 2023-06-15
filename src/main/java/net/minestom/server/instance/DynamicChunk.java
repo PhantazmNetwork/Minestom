@@ -7,6 +7,8 @@ import net.minestom.server.coordinate.Point;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.Player;
 import net.minestom.server.entity.pathfinding.PFBlock;
+import net.minestom.server.event.EventDispatcher;
+import net.minestom.server.event.player.PreSendChunkEvent;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockHandler;
 import net.minestom.server.network.NetworkBuffer;
@@ -131,9 +133,10 @@ public class DynamicChunk extends Chunk {
     /**
      * Unsafe version of {@link DynamicChunk#getBlock(int, int, int, Condition)} that does not ensure a lock is held on
      * the chunk.
-     * @param x the x-coordinate of the block
-     * @param y the y-coordinate of the block
-     * @param z the z-coordinate of the block
+     *
+     * @param x         the x-coordinate of the block
+     * @param y         the y-coordinate of the block
+     * @param z         the z-coordinate of the block
      * @param condition the condition used to potentially optimize block retrieval
      * @return the block at the given coordinate
      */
@@ -173,13 +176,30 @@ public class DynamicChunk extends Chunk {
     @Override
     public void sendChunk(@NotNull Player player) {
         if (!isLoaded()) return;
-        player.sendPacket(chunkCache);
+
+        PreSendChunkEvent preSendChunkEvent = new PreSendChunkEvent(this);
+        EventDispatcher.call(preSendChunkEvent);
+
+        if (preSendChunkEvent.chunk() instanceof DynamicChunk dynamicChunk) {
+            player.sendPacket(dynamicChunk.chunkCache);
+        } else {
+            player.sendPacket(chunkCache);
+        }
+
     }
 
     @Override
     public void sendChunk() {
         if (!isLoaded()) return;
-        sendPacketToViewers(chunkCache);
+
+        PreSendChunkEvent preSendChunkEvent = new PreSendChunkEvent(this);
+        EventDispatcher.call(preSendChunkEvent);
+
+        if (preSendChunkEvent.chunk() instanceof DynamicChunk dynamicChunk) {
+            sendPacketToViewers(dynamicChunk.chunkCache);
+        } else {
+            sendPacketToViewers(chunkCache);
+        }
     }
 
     @Override
