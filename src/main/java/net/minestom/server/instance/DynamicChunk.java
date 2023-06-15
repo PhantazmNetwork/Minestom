@@ -179,13 +179,7 @@ public class DynamicChunk extends Chunk {
 
         PreSendChunkEvent preSendChunkEvent = new PreSendChunkEvent(this);
         EventDispatcher.call(preSendChunkEvent);
-
-        if (preSendChunkEvent.chunk() instanceof DynamicChunk dynamicChunk) {
-            player.sendPacket(dynamicChunk.chunkCache);
-        } else {
-            player.sendPacket(chunkCache);
-        }
-
+        player.sendPacket(preSendChunkEvent.chunk().chunkCache);
     }
 
     @Override
@@ -194,16 +188,11 @@ public class DynamicChunk extends Chunk {
 
         PreSendChunkEvent preSendChunkEvent = new PreSendChunkEvent(this);
         EventDispatcher.call(preSendChunkEvent);
-
-        if (preSendChunkEvent.chunk() instanceof DynamicChunk dynamicChunk) {
-            sendPacketToViewers(dynamicChunk.chunkCache);
-        } else {
-            sendPacketToViewers(chunkCache);
-        }
+        sendPacketToViewers(preSendChunkEvent.chunk().chunkCache);
     }
 
     @Override
-    public @NotNull Chunk copy(@NotNull Instance instance, int chunkX, int chunkZ) {
+    public @NotNull DynamicChunk copy(@NotNull Instance instance, int chunkX, int chunkZ) {
         DynamicChunk dynamicChunk = new DynamicChunk(instance, chunkX, chunkZ);
         dynamicChunk.sections = sections.stream().map(Section::clone).toList();
         dynamicChunk.entries.putAll(entries);

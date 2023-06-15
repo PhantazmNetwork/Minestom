@@ -1,22 +1,22 @@
 package net.minestom.server.event.player;
 
 import net.minestom.server.event.trait.InstanceEvent;
-import net.minestom.server.instance.Chunk;
+import net.minestom.server.instance.DynamicChunk;
 import net.minestom.server.instance.Instance;
 import org.jetbrains.annotations.NotNull;
 
 public class PreSendChunkEvent implements InstanceEvent {
-    private Chunk chunk;
+    private DynamicChunk chunk;
 
-    public PreSendChunkEvent(@NotNull Chunk chunk) {
+    public PreSendChunkEvent(@NotNull DynamicChunk chunk) {
         this.chunk = chunk;
     }
 
-    public @NotNull Chunk chunk() {
+    public @NotNull DynamicChunk chunk() {
         return chunk;
     }
 
-    public void setChunk(@NotNull Chunk chunk) {
+    public void setChunk(@NotNull DynamicChunk chunk) {
         this.chunk = chunk;
     }
 
