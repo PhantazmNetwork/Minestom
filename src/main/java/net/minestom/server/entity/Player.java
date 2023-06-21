@@ -287,10 +287,15 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         PlayerSkinInitEvent skinInitEvent = new PlayerSkinInitEvent(this, profileSkin);
         EventDispatcher.call(skinInitEvent);
         this.skin = skinInitEvent.getSkin();
+
         // FIXME: when using Geyser, this line remove the skin of the client
-        PacketUtils.broadcastPacket(getAddPlayerToList());
-        for (var player : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
-            if (player != this) sendPacket(player.getAddPlayerToList());
+        spawnInstance.sendGroupedPacket(getAddPlayerToList());
+        for (Player player : spawnInstance.getEntityTracker().entities(EntityTracker.Target.PLAYERS)) {
+            if (player == this) {
+                continue;
+            }
+
+            sendPacket(player.getAddPlayerToList());
         }
 
         //Teams
