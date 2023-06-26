@@ -78,8 +78,6 @@ dependencies {
     // Libraries
     api(libs.gson)
     implementation(libs.jcTools)
-    // Path finding
-    api(libs.hydrazine)
 
     // Adventure, for user-interface
     api(libs.bundles.adventure)

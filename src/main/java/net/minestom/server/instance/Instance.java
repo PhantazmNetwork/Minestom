@@ -12,7 +12,6 @@ import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.EntityCreature;
 import net.minestom.server.entity.ExperienceOrb;
 import net.minestom.server.entity.Player;
-import net.minestom.server.entity.pathfinding.PFInstanceSpace;
 import net.minestom.server.event.EventDispatcher;
 import net.minestom.server.event.EventFilter;
 import net.minestom.server.event.EventHandler;
@@ -87,7 +86,7 @@ public abstract class Instance implements Block.Getter, Block.Setter,
     private final ChunkCache blockRetriever = new ChunkCache(this, null, null);
 
     // the uuid of this instance
-    protected UUID uniqueId;
+    protected final UUID uniqueId;
 
     // instance custom data
     private final TagHandler tagHandler = TagHandler.newHandler();
@@ -96,9 +95,6 @@ public abstract class Instance implements Block.Getter, Block.Setter,
 
     // the explosion supplier
     private ExplosionSupplier explosionSupplier;
-
-    // Pathfinder
-    private final PFInstanceSpace instanceSpace = new PFInstanceSpace(this);
 
     // Adventure
     private final Pointers pointers;
@@ -112,7 +108,7 @@ public abstract class Instance implements Block.Getter, Block.Setter,
     public Instance(@NotNull UUID uniqueId, @NotNull DimensionType dimensionType) {
         Check.argCondition(!dimensionType.isRegistered(),
                 "The dimension " + dimensionType.getName() + " is not registered! Please use DimensionTypeManager#addDimension");
-        this.uniqueId = uniqueId;
+        this.uniqueId = Objects.requireNonNull(uniqueId, "uniqueID");
         this.dimensionType = dimensionType;
 
         this.worldBorder = new WorldBorder(this);
@@ -692,18 +688,6 @@ public abstract class Instance implements Block.Getter, Block.Setter,
      */
     public void setExplosionSupplier(@Nullable ExplosionSupplier supplier) {
         this.explosionSupplier = supplier;
-    }
-
-    /**
-     * Gets the instance space.
-     * <p>
-     * Used by the pathfinder for entities.
-     *
-     * @return the instance space
-     */
-    @ApiStatus.Internal
-    public @NotNull PFInstanceSpace getInstanceSpace() {
-        return instanceSpace;
     }
 
     @Override
