@@ -111,6 +111,21 @@ public final class InstanceManager {
      */
     public void unregisterInstance(@NotNull Instance instance) {
         Check.stateCondition(!instance.getPlayers().isEmpty(), "You cannot unregister an instance with players inside.");
+        unregister0(instance);
+    }
+
+    /**
+     * Forcefully unregisters an {@link Instance}, kicking any players inside.
+     *
+     * @param instance the instance to unregister
+     */
+    public void forceUnregisterInstance(@NotNull Instance instance) {
+        unregister0(instance);
+        instance.getPlayers().forEach(player -> player.kick("The world you were in was unloaded by the server!"));
+    }
+
+    @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
+    private void unregister0(Instance instance) {
         synchronized (instance) {
             InstanceUnregisterEvent event = new InstanceUnregisterEvent(instance);
             EventDispatcher.call(event);
@@ -125,7 +140,6 @@ public final class InstanceManager {
             instance.setRegistered(false);
             this.instances.remove(instance);
         }
-        MinecraftServer.getGlobalEventHandler().call(new InstanceUnregisterEvent(instance));
     }
 
     /**
