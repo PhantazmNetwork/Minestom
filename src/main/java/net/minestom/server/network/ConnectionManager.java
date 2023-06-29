@@ -256,6 +256,11 @@ public final class ConnectionManager {
         this.waitingPlayers.drain(waitingPlayer -> {
             PlayerLoginEvent loginEvent = new PlayerLoginEvent(waitingPlayer);
             EventDispatcher.call(loginEvent);
+            if (loginEvent.isCancelled()) {
+                waitingPlayer.kick(Component.text("The server could not be joined at this time!"));
+                return;
+            }
+
             final Instance spawningInstance = loginEvent.getSpawningInstance();
             Check.notNull(spawningInstance, "You need to specify a spawning instance in the PlayerLoginEvent");
             // Spawn the player at Player#getRespawnPoint

@@ -1,6 +1,7 @@
 package net.minestom.server.event.player;
 
 import net.minestom.server.entity.Player;
+import net.minestom.server.event.trait.CancellableEvent;
 import net.minestom.server.event.trait.PlayerEvent;
 import net.minestom.server.instance.Instance;
 import org.jetbrains.annotations.NotNull;
@@ -16,10 +17,12 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * WARNING: defining the spawning instance is MANDATORY.
  */
-public class PlayerLoginEvent implements PlayerEvent {
+public class PlayerLoginEvent implements PlayerEvent, CancellableEvent {
 
     private final Player player;
     private Instance spawningInstance;
+
+    private boolean cancelled;
 
     public PlayerLoginEvent(@NotNull Player player) {
         this.player = player;
@@ -49,5 +52,15 @@ public class PlayerLoginEvent implements PlayerEvent {
     @Override
     public @NotNull Player getPlayer() {
         return player;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
     }
 }
