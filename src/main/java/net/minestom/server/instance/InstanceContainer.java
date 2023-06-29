@@ -123,7 +123,7 @@ public class InstanceContainer extends Instance {
 
             PreBlockChangeEvent event = new PreBlockChangeEvent(blockPosition, previousBlock, block, this);
             EventDispatcher.call(event);
-            if(event.isCancelled()) {
+            if (event.isCancelled()) {
                 return;
             }
 
@@ -149,7 +149,7 @@ public class InstanceContainer extends Instance {
             executeNeighboursBlockPlacementRule(blockPosition);
 
             // Refresh player chunk block
-            if(event.syncClient()){
+            if (event.syncClient()) {
                 chunk.sendPacketToViewers(new BlockChangePacket(blockPosition, block.stateId()));
                 var registry = block.registry();
                 if (registry.isBlockEntity()) {
@@ -490,7 +490,21 @@ public class InstanceContainer extends Instance {
      * @return an {@link InstanceContainer} with the exact same chunks as 'this'
      * @see #getSrcInstance() to retrieve the "creation source" of the copied instance
      */
-    public synchronized InstanceContainer copy() {
+    public synchronized @NotNull InstanceContainer copy() {
+        return copyInternal();
+    }
+
+    /**
+     * Works similarly to {@link InstanceContainer#copy()}, but does not synchronize on the instance. This is safe to
+     * use if it can be proven that the chunks contained in this instance will not be mutated during the copy.
+     *
+     * @return a new {@link InstanceContainer}
+     */
+    public @NotNull InstanceContainer unsafeCopy() {
+        return copyInternal();
+    }
+
+    private InstanceContainer copyInternal() {
         InstanceContainer copiedInstance = new InstanceContainer(UUID.randomUUID(), getDimensionType());
         copiedInstance.srcInstance = this;
         copiedInstance.lastBlockChangeTime = lastBlockChangeTime;
