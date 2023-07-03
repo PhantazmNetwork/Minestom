@@ -1,5 +1,6 @@
 package net.minestom.server.instance;
 
+import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.instance.block.Block;
@@ -8,6 +9,7 @@ import net.minestom.server.instance.generator.Generator;
 import net.minestom.server.utils.MathUtils;
 import net.minestom.server.utils.chunk.ChunkUtils;
 import net.minestom.server.world.biomes.Biome;
+import net.minestom.server.world.biomes.BiomeManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -256,10 +258,12 @@ public class GeneratorTest {
             modifier.setBiome(48, 0, -32, Biome.PLAINS);
             modifier.setBiome(48 + 8, 0, -32, Biome.PLAINS);
         };
+
+        BiomeManager biomeManager = MinecraftServer.getBiomeManager();
         generator.generate(chunkUnits);
-        assertEquals(Biome.PLAINS.id(), sections[0].biomePalette().get(0, 0, 0));
+        assertEquals(biomeManager.getId(Biome.PLAINS), sections[0].biomePalette().get(0, 0, 0));
         assertEquals(0, sections[0].biomePalette().get(1, 0, 0));
-        assertEquals(Biome.PLAINS.id(), sections[0].biomePalette().get(2, 0, 0));
+        assertEquals(biomeManager.getId(Biome.PLAINS), sections[0].biomePalette().get(2, 0, 0));
     }
 
     @Test
@@ -279,7 +283,7 @@ public class GeneratorTest {
         generator.generate(chunkUnits);
         for (var section : sections) {
             section.biomePalette().getAll((x, y, z, value) ->
-                    assertEquals(Biome.PLAINS.id(), value));
+                    assertEquals(MinecraftServer.getBiomeManager().getId(Biome.PLAINS), value));
         }
     }
 

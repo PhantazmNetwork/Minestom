@@ -91,7 +91,7 @@ public class DynamicChunk extends Chunk {
         section.biomePalette().set(
                 toSectionRelativeCoordinate(x) / 4,
                 toSectionRelativeCoordinate(y) / 4,
-                toSectionRelativeCoordinate(z) / 4, biome.id());
+                toSectionRelativeCoordinate(z) / 4, MinecraftServer.getBiomeManager().getId(biome));
     }
 
     @Override

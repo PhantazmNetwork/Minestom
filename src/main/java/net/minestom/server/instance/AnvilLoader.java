@@ -10,6 +10,7 @@ import net.minestom.server.utils.NamespaceID;
 import net.minestom.server.utils.async.AsyncUtils;
 import net.minestom.server.utils.chunk.ChunkSupplier;
 import net.minestom.server.world.biomes.Biome;
+import net.minestom.server.world.biomes.BiomeManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jglrxavpok.hephaistos.mca.*;
@@ -35,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class AnvilLoader implements IChunkLoader {
     private final static Logger LOGGER = LoggerFactory.getLogger(AnvilLoader.class);
-    private static final Biome BIOME = Biome.PLAINS;
+    private static final NamespaceID BIOME_ID = NamespaceID.from("minecraft:plains");
 
     private final Map<String, RegionFile> alreadyLoaded = new ConcurrentHashMap<>();
     private final Path path;
@@ -181,6 +182,7 @@ public class AnvilLoader implements IChunkLoader {
             }
 
             // Biomes
+            BiomeManager biomeManager = MinecraftServer.getBiomeManager();
             if (chunkReader.getGenerationStatus().compareTo(ChunkColumn.GenerationStatus.Biomes) > 0) {
                 SectionBiomeInformation sectionBiomeInformation = chunkReader.readSectionBiomes(sectionReader);
 
@@ -194,7 +196,7 @@ public class AnvilLoader implements IChunkLoader {
                                     int finalY = sectionY * Chunk.CHUNK_SECTION_SIZE + y;
                                     String biomeName = sectionBiomeInformation.getBaseBiome();
                                     Biome biome = biomeCache.computeIfAbsent(biomeName, n ->
-                                            Objects.requireNonNullElse(MinecraftServer.getBiomeManager().getByName(NamespaceID.from(n)), BIOME));
+                                            Objects.requireNonNullElse(biomeManager.getByName(NamespaceID.from(n)), biomeManager.getByName(BIOME_ID)));
                                     chunk.setBiome(finalX, finalY, finalZ, biome);
                                 }
                             }
@@ -210,7 +212,7 @@ public class AnvilLoader implements IChunkLoader {
                                     int index = x / 4 + (z / 4) * 4 + (y / 4) * 16;
                                     String biomeName = sectionBiomeInformation.getBiomes()[index];
                                     Biome biome = biomeCache.computeIfAbsent(biomeName, n ->
-                                            Objects.requireNonNullElse(MinecraftServer.getBiomeManager().getByName(NamespaceID.from(n)), BIOME));
+                                            Objects.requireNonNullElse(biomeManager.getByName(NamespaceID.from(n)), biomeManager.getByName(BIOME_ID)));
                                     chunk.setBiome(finalX, finalY, finalZ, biome);
                                 }
                             }

@@ -26,8 +26,8 @@ public final class OptifineSupport {
         OptifineSupport.enabled = true;
 
         BiomeManager biomeManager = MinecraftServer.getBiomeManager();
-        biomeManager.addBiome(Biome.builder().name(NamespaceID.from("minecraft:swamp")).build());
-        biomeManager.addBiome(Biome.builder().name(NamespaceID.from("minecraft:swamp_hills")).build());
+        biomeManager.addBiome(1, Biome.builder().name(NamespaceID.from("minecraft:swamp")).build());
+        biomeManager.addBiome(2, Biome.builder().name(NamespaceID.from("minecraft:swamp_hills")).build());
     }
 
     public static boolean isEnabled() {
