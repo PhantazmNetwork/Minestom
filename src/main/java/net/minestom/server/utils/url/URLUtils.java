@@ -26,18 +26,15 @@ public final class URLUtils {
             inputStream = connection.getErrorStream();
         }
 
-        BufferedReader in = new BufferedReader(
-                new InputStreamReader(
-                        inputStream));
+        try(BufferedReader in = new BufferedReader(new InputStreamReader(inputStream))) {
+            StringBuilder response = new StringBuilder();
+            String currentLine;
 
-        StringBuilder response = new StringBuilder();
-        String currentLine;
+            while ((currentLine = in.readLine()) != null) {
+                response.append(currentLine);
+            }
 
-        while ((currentLine = in.readLine()) != null)
-            response.append(currentLine);
-
-        in.close();
-
-        return response.toString();
+            return response.toString();
+        }
     }
 }

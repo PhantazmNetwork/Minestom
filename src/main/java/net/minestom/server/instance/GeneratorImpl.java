@@ -2,6 +2,7 @@ package net.minestom.server.instance;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.instance.block.Block;
@@ -220,7 +221,7 @@ final class GeneratorImpl {
             this.biomePalette.set(
                     toSectionRelativeCoordinate(x) / 4,
                     toSectionRelativeCoordinate(y) / 4,
-                    toSectionRelativeCoordinate(z) / 4, biome.id());
+                    toSectionRelativeCoordinate(z) / 4, MinecraftServer.getBiomeManager().getId(biome));
         }
 
         @Override
@@ -264,7 +265,7 @@ final class GeneratorImpl {
         @Override
         public void fillBiome(@NotNull Biome biome) {
             if (fork) throw new IllegalStateException("Cannot modify biomes of a fork");
-            this.biomePalette.fill(biome.id());
+            this.biomePalette.fill(MinecraftServer.getBiomeManager().getId(biome));
         }
 
         private int retrieveBlockId(Block block) {

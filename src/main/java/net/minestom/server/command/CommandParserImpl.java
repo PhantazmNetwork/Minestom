@@ -165,7 +165,7 @@ final class CommandParserImpl implements CommandParser {
         for (Node node : parent.next()) {
             final SuggestionCallback suggestionCallback = node.argument().getSuggestionCallback();
             if (suggestionCallback != null) {
-                return new NodeResult(parent,
+                return new NodeResult(node,
                         new ArgumentResult.SyntaxError<>("None of the arguments were compatible, but a suggestion callback was found.", "", -1),
                         suggestionCallback);
             }
@@ -236,7 +236,8 @@ final class CommandParserImpl implements CommandParser {
 
     record ValidCommand(String input, CommandCondition condition, CommandExecutor executor,
                         @NotNull Map<String, ArgumentResult<Object>> arguments,
-                        CommandExecutor globalListener, @Nullable SuggestionCallback suggestionCallback, List<Argument<?>> args)
+                        CommandExecutor globalListener, @Nullable SuggestionCallback suggestionCallback,
+                        List<Argument<?>> args)
             implements InternalKnownCommand, Result.KnownCommand.Valid {
 
         static ValidCommand defaultExecutor(String input, Chain chain) {

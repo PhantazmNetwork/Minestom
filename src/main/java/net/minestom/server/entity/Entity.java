@@ -56,7 +56,6 @@ import net.minestom.server.utils.async.AsyncUtils;
 import net.minestom.server.utils.block.BlockIterator;
 import net.minestom.server.utils.chunk.ChunkCache;
 import net.minestom.server.utils.chunk.ChunkUtils;
-import net.minestom.server.utils.entity.EntityUtils;
 import net.minestom.server.utils.player.PlayerUtils;
 import net.minestom.server.utils.time.Cooldown;
 import net.minestom.server.utils.time.TimeUnit;
@@ -270,7 +269,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     }
 
     public boolean isOnGround() {
-        return onGround || EntityUtils.isOnGround(this) /* backup for levitating entities */;
+        return onGround;
     }
 
     /**
@@ -378,7 +377,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     }
 
     @ApiStatus.Experimental
-    public void updateViewableRule(@Nullable Predicate<Player> predicate) {
+    public void updateViewableRule(@Nullable Predicate<? super Player> predicate) {
         this.viewEngine.viewableOption.updateRule(predicate);
     }
 
@@ -905,7 +904,9 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     private void removeFromInstance(Instance instance) {
         EventDispatcher.call(new RemoveEntityFromInstanceEvent(instance, this));
         instance.getEntityTracker().unregister(this, trackingTarget, trackingUpdate);
-        this.viewEngine.forManuals(this::removeViewer);
+        this.viewEngine.forEachThenClear(player -> {
+            updateOldViewer(player);
+        });
     }
 
     /**
@@ -918,7 +919,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     }
 
     /**
-     * Changes the entity velocity and calls {@link EntityVelocityEvent}.
+     * Changes the entity velocity and calls {@link EntityVelocityEvent}, measured in blocks/sec
      * <p>
      * The final velocity can be cancelled or modified by the event.
      *
@@ -945,6 +946,10 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
             // The entity does not have velocity if the velocity is zero
             return !velocity.isZero();
         }
+    }
+
+    public void setHasPhysics(boolean hasPhysics) {
+        this.hasPhysics = hasPhysics;
     }
 
     /**
@@ -1627,6 +1632,10 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
      * @param z        knockback on z axle, for default knockback use the following formula <pre>-cos(attacker.yaw * (pi/180))</pre>
      */
     public void takeKnockback(float strength, final double x, final double z) {
+        takeKnockback(strength, false, x, z);
+    }
+
+    public void takeKnockback(float strength, boolean horizontal, final double x, final double z) {
         if (strength > 0) {
             //TODO check possible side effects of unnatural TPS (other than 20TPS)
             strength *= MinecraftServer.TICK_PER_SECOND;
@@ -1634,7 +1643,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
             final double verticalLimit = .4d * MinecraftServer.TICK_PER_SECOND;
 
             setVelocity(new Vec(velocity.x() / 2d - velocityModifier.x(),
-                    onGround ? Math.min(verticalLimit, velocity.y() / 2d + strength) : velocity.y(),
+                    onGround && !horizontal ? Math.min(verticalLimit, velocity.y() / 2d + strength) : velocity.y(),
                     velocity.z() / 2d - velocityModifier.z()
             ));
         }

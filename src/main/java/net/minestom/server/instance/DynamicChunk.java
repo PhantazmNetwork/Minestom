@@ -1,12 +1,12 @@
 package net.minestom.server.instance;
 
-import com.extollit.gaming.ai.path.model.ColumnarOcclusionFieldList;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.Player;
-import net.minestom.server.entity.pathfinding.PFBlock;
+import net.minestom.server.event.EventDispatcher;
+import net.minestom.server.event.player.PreSendChunkEvent;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockHandler;
 import net.minestom.server.network.NetworkBuffer;
@@ -63,12 +63,7 @@ public class DynamicChunk extends Chunk {
         this.lastChange = System.currentTimeMillis();
         this.chunkCache.invalidate();
         this.lightCache.invalidate();
-        // Update pathfinder
-        if (columnarSpace != null) {
-            final ColumnarOcclusionFieldList columnarOcclusionFieldList = columnarSpace.occlusionFields();
-            final var blockDescription = PFBlock.get(block);
-            columnarOcclusionFieldList.onBlockChanged(x, y, z, blockDescription, 0);
-        }
+
         Section section = getSectionAt(y);
         section.blockPalette()
                 .set(toSectionRelativeCoordinate(x), toSectionRelativeCoordinate(y), toSectionRelativeCoordinate(z), block.stateId());
@@ -97,7 +92,7 @@ public class DynamicChunk extends Chunk {
         section.biomePalette().set(
                 toSectionRelativeCoordinate(x) / 4,
                 toSectionRelativeCoordinate(y) / 4,
-                toSectionRelativeCoordinate(z) / 4, biome.id());
+                toSectionRelativeCoordinate(z) / 4, MinecraftServer.getBiomeManager().getId(biome));
     }
 
     @Override
@@ -126,6 +121,20 @@ public class DynamicChunk extends Chunk {
     @Override
     public @Nullable Block getBlock(int x, int y, int z, @NotNull Condition condition) {
         assertLock();
+        return getBlock_UNSAFE(x, y, z, condition);
+    }
+
+    /**
+     * Unsafe version of {@link DynamicChunk#getBlock(int, int, int, Condition)} that does not ensure a lock is held on
+     * the chunk.
+     *
+     * @param x         the x-coordinate of the block
+     * @param y         the y-coordinate of the block
+     * @param z         the z-coordinate of the block
+     * @param condition the condition used to potentially optimize block retrieval
+     * @return the block at the given coordinate
+     */
+    protected Block getBlock_UNSAFE(int x, int y, int z, @NotNull Condition condition) {
         if (y < minSection * CHUNK_SECTION_SIZE || y >= maxSection * CHUNK_SECTION_SIZE)
             return Block.AIR; // Out of bounds
 
@@ -161,17 +170,23 @@ public class DynamicChunk extends Chunk {
     @Override
     public void sendChunk(@NotNull Player player) {
         if (!isLoaded()) return;
-        player.sendPacket(chunkCache);
+
+        PreSendChunkEvent preSendChunkEvent = new PreSendChunkEvent(this);
+        EventDispatcher.call(preSendChunkEvent);
+        player.sendPacket(preSendChunkEvent.chunk().chunkCache);
     }
 
     @Override
     public void sendChunk() {
         if (!isLoaded()) return;
-        sendPacketToViewers(chunkCache);
+
+        PreSendChunkEvent preSendChunkEvent = new PreSendChunkEvent(this);
+        EventDispatcher.call(preSendChunkEvent);
+        sendPacketToViewers(preSendChunkEvent.chunk().chunkCache);
     }
 
     @Override
-    public @NotNull Chunk copy(@NotNull Instance instance, int chunkX, int chunkZ) {
+    public @NotNull DynamicChunk copy(@NotNull Instance instance, int chunkX, int chunkZ) {
         DynamicChunk dynamicChunk = new DynamicChunk(instance, chunkX, chunkZ);
         dynamicChunk.sections = sections.stream().map(Section::clone).toList();
         dynamicChunk.entries.putAll(entries);

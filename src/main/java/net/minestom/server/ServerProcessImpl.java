@@ -35,6 +35,9 @@ import net.minestom.server.world.biomes.BiomeManager;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.tinylog.Level;
+import org.tinylog.provider.InternalLogger;
+import org.tinylog.provider.ProviderRegistry;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -252,6 +255,13 @@ final class ServerProcessImpl implements ServerProcess {
         MinestomTerminal.stop();
         dispatcher.shutdown();
         LOGGER.info(MinecraftServer.getBrandName() + " server stopped successfully.");
+
+        // https://github.com/Minestom/Minestom/pull/691
+        try {
+            ProviderRegistry.getLoggingProvider().shutdown();
+        } catch (InterruptedException ex) {
+            InternalLogger.log(Level.ERROR, ex, "Interrupted while waiting for shutdown");
+        }
     }
 
     @Override

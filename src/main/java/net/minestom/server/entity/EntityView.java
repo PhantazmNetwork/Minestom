@@ -94,9 +94,10 @@ final class EntityView {
         }
     }
 
-    public void forManuals(@NotNull Consumer<Player> consumer) {
+    public void forEachThenClear(@NotNull Consumer<Player> consumer) {
         synchronized (mutex) {
             this.manualViewers.forEach(consumer);
+            this.manualViewers.clear();
         }
     }
 
@@ -139,7 +140,7 @@ final class EntityView {
         private volatile int auto = 1;
         // The custom rule used to determine if an entity is viewable.
         // null if auto-viewable
-        private Predicate<T> predicate = null;
+        private Predicate<? super T> predicate = null;
 
         public Option(EntityTracker.Target<T> target, Predicate<T> loopPredicate,
                       Consumer<T> addition, Consumer<T> removal) {
@@ -154,7 +155,7 @@ final class EntityView {
         }
 
         public boolean predicate(T entity) {
-            final Predicate<T> predicate = this.predicate;
+            final Predicate<? super T> predicate = this.predicate;
             return predicate == null || predicate.test(entity);
         }
 
@@ -181,7 +182,7 @@ final class EntityView {
             }
         }
 
-        public void updateRule(Predicate<T> predicate) {
+        public void updateRule(Predicate<? super T> predicate) {
             synchronized (mutex) {
                 this.predicate = predicate;
                 updateRule0(predicate);
@@ -194,7 +195,7 @@ final class EntityView {
             }
         }
 
-        void updateRule0(Predicate<T> predicate) {
+        void updateRule0(Predicate<? super T> predicate) {
             if (predicate == null) {
                 update(loopPredicate, entity -> {
                     if (!isRegistered(entity)) addition.accept(entity);

@@ -10,6 +10,7 @@ import net.minestom.server.entity.EntitySpawnType;
 import net.minestom.server.entity.EquipmentSlot;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.item.Material;
+import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.utils.NamespaceID;
 import net.minestom.server.utils.collection.ObjectArray;
 import net.minestom.server.utils.validate.Check;
@@ -148,6 +149,7 @@ public final class Registry {
         POTION_TYPES("potions.json"),
         PARTICLES("particles.json"),
         DAMAGE_TYPES("damage_types.json"),
+        BANNER_PATTERNS("banner_patterns.json"),
 
         BLOCK_TAGS("tags/block_tags.json"),
         ENTITY_TYPE_TAGS("tags/entity_type_tags.json"),
@@ -174,6 +176,7 @@ public final class Registry {
         private final double jumpFactor;
         private final boolean air;
         private final boolean solid;
+        private final SoundEvent stepSound;
         private final boolean liquid;
         private final String blockEntity;
         private final int blockEntityId;
@@ -194,6 +197,7 @@ public final class Registry {
             this.jumpFactor = main.getDouble("jumpFactor", 1);
             this.air = main.getBoolean("air", false);
             this.solid = main.getBoolean("solid");
+            this.stepSound = SoundEvent.fromId(main.getInt("stepSoundId"));
             this.liquid = main.getBoolean("liquid", false);
             {
                 Properties blockEntity = main.section("blockEntity");
@@ -257,6 +261,10 @@ public final class Registry {
 
         public boolean isSolid() {
             return solid;
+        }
+
+        public SoundEvent getStepSound() {
+            return stepSound;
         }
 
         public boolean isLiquid() {

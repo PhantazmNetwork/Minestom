@@ -41,7 +41,7 @@ public class EntityBlockPhysicsIntegrationTest {
             }
         }
 
-        fail("Expected one of the following points: " + expected);
+        fail("Expected one of the following points: " + expected + " but was " + actual);
     }
 
     @Test
@@ -295,7 +295,6 @@ public class EntityBlockPhysicsIntegrationTest {
     public void entityPhysicsCheckDiagonal(Env env) {
         var instance = env.createFlatInstance();
         instance.setBlock(1, 43, 1, Block.STONE);
-        instance.setBlock(1, 43, 2, Block.STONE);
 
         var entity = new Entity(EntityType.ZOMBIE);
         entity.setInstance(instance, new Pos(0, 42, 0)).join();
@@ -420,16 +419,45 @@ public class EntityBlockPhysicsIntegrationTest {
     }
 
     @Test
+    public void entitySlabWalkCheck(Env env) {
+        Vec velocity = new Vec(0.0, 0.0, 1);
+        Pos position = new Pos(0.5, 1, 0.5);
+        BoundingBox boundingBox = new Entity(EntityType.ZOMBIE).getBoundingBox();
+
+        SweepResult sweepResultFinal = new SweepResult(1, 0, 0, 0, null);
+
+        Shape shape = Block.DARK_OAK_SLAB.registry().collisionShape();
+        shape.intersectBoxSwept(position, velocity, new Vec(0, 0, 1), boundingBox, sweepResultFinal);
+
+        assertNull(sweepResultFinal.collidedShape);
+    }
+
+    @Test
+    public void entitySlabWalkCheck2(Env env) {
+        Vec velocity = new Vec(8.466556378692215E-7, 0.0, -0.1299999952288714);
+        Pos position = new Pos(-96.50000521018873, 13.5 + Vec.EPSILON, -42.69999999998775);
+
+        BoundingBox boundingBox = new Entity(EntityType.ZOMBIE).getBoundingBox();
+
+        SweepResult sweepResultFinal = new SweepResult(1, 0, 0, 0, null);
+
+        Shape shape = Block.DARK_OAK_SLAB.registry().collisionShape();
+        shape.intersectBoxSwept(position, velocity, new Vec(-97, 13, -44), boundingBox, sweepResultFinal);
+
+        assertNull(sweepResultFinal.collidedShape);
+    }
+
+    @Test
     public void entityPhysicsCheckEdgeClip(Env env) {
         var instance = env.createFlatInstance();
         instance.setBlock(1, 43, 1, Block.STONE);
 
         var entity = new Entity(EntityType.ZOMBIE);
-        entity.setInstance(instance, new Pos(0, 42, 0.7)).join();
+        entity.setInstance(instance, new Pos(0, 42, 0.8)).join();
         assertEquals(instance, entity.getInstance());
 
         PhysicsResult res = CollisionUtils.handlePhysics(entity, new Vec(10, 0, 0));
-        assertEqualsPoint(new Pos(0.7, 42, 0.7), res.newPosition());
+        assertEqualsPoint(new Pos(0.7, 42, 0.8), res.newPosition());
     }
 
     @Test

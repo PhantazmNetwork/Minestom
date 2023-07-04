@@ -10,4 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
 public record PhysicsResult(Pos newPosition, Vec newVelocity, boolean isOnGround,
                             boolean collisionX, boolean collisionY, boolean collisionZ,
                             Vec originalDelta, Point collidedBlockY, Block blockTypeY) {
+    public boolean hasCollision() {
+        return collisionX || collisionY || collisionZ;
+    }
 }

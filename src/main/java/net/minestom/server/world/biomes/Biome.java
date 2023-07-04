@@ -11,7 +11,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class Biome {
-    public static final AtomicInteger ID_COUNTER = new AtomicInteger(0);
     private static final BiomeEffects DEFAULT_EFFECTS = BiomeEffects.builder()
             .fogColor(0xC0D8FF)
             .skyColor(0x78A7FF)
@@ -21,34 +20,23 @@ public final class Biome {
 
     //A plains biome has to be registered or else minecraft will crash
     public static final Biome PLAINS = Biome.builder()
-            .category(Category.NONE)
             .name(NamespaceID.from("minecraft:plains"))
             .temperature(0.8F)
             .downfall(0.4F)
-            .depth(0.125F)
-            .scale(0.05F)
             .effects(DEFAULT_EFFECTS)
             .build();
 
-    private final int id = ID_COUNTER.getAndIncrement();
-
     private final NamespaceID name;
-    private final float depth;
     private final float temperature;
-    private final float scale;
     private final float downfall;
-    private final Category category;
     private final BiomeEffects effects;
     private final Precipitation precipitation;
     private final TemperatureModifier temperatureModifier;
 
-    Biome(NamespaceID name, float depth, float temperature, float scale, float downfall, Category category, BiomeEffects effects, Precipitation precipitation, TemperatureModifier temperatureModifier) {
+    Biome(NamespaceID name, float temperature, float downfall, BiomeEffects effects, Precipitation precipitation, TemperatureModifier temperatureModifier) {
         this.name = name;
-        this.depth = depth;
         this.temperature = temperature;
-        this.scale = scale;
         this.downfall = downfall;
-        this.category = category;
         this.effects = effects;
         this.precipitation = precipitation;
         this.temperatureModifier = temperatureModifier;
@@ -58,22 +46,18 @@ public final class Biome {
         return new Builder();
     }
 
-    public @NotNull NBTCompound toNbt() {
+    public @NotNull NBTCompound toNbt(int id) {
         Check.notNull(name, "The biome namespace cannot be null");
         Check.notNull(effects, "The biome effects cannot be null");
 
         return NBT.Compound(nbt -> {
             nbt.setString("name", name.toString());
-            nbt.setInt("id", id());
+            nbt.setInt("id", id);
 
             nbt.set("element", NBT.Compound(element -> {
-                element.setFloat("depth", depth);
                 element.setFloat("temperature", temperature);
-                element.setFloat("scale", scale);
                 element.setFloat("downfall", downfall);
-                element.setString("category", category.name().toLowerCase(Locale.ROOT));
                 element.setByte("has_precipitation", (byte) (precipitation == Precipitation.NONE ? 0 : 1));
-                element.setString("precipitation", precipitation.name().toLowerCase(Locale.ROOT));
                 if (temperatureModifier != TemperatureModifier.NONE)
                     element.setString("temperature_modifier", temperatureModifier.name().toLowerCase(Locale.ROOT));
                 element.set("effects", effects.toNbt());
@@ -81,32 +65,16 @@ public final class Biome {
         });
     }
 
-    public int id() {
-        return this.id;
-    }
-
     public NamespaceID name() {
         return this.name;
-    }
-
-    public float depth() {
-        return this.depth;
     }
 
     public float temperature() {
         return this.temperature;
     }
 
-    public float scale() {
-        return this.scale;
-    }
-
     public float downfall() {
         return this.downfall;
-    }
-
-    public Category category() {
-        return this.category;
     }
 
     public BiomeEffects effects() {
@@ -125,24 +93,14 @@ public final class Biome {
         NONE, RAIN, SNOW;
     }
 
-    public enum Category {
-        NONE, TAIGA, EXTREME_HILLS, JUNGLE, MESA, PLAINS,
-        SAVANNA, ICY, THE_END, BEACH, FOREST, OCEAN,
-        DESERT, RIVER, SWAMP, MUSHROOM, NETHER, UNDERGROUND,
-        MOUNTAIN;
-    }
-
     public enum TemperatureModifier {
         NONE, FROZEN;
     }
 
     public static final class Builder {
         private NamespaceID name;
-        private float depth = 0.2f;
         private float temperature = 0.25f;
-        private float scale = 0.2f;
         private float downfall = 0.8f;
-        private Category category = Category.NONE;
         private BiomeEffects effects = DEFAULT_EFFECTS;
         private Precipitation precipitation = Precipitation.RAIN;
         private TemperatureModifier temperatureModifier = TemperatureModifier.NONE;
@@ -155,28 +113,13 @@ public final class Biome {
             return this;
         }
 
-        public Builder depth(float depth) {
-            this.depth = depth;
-            return this;
-        }
-
         public Builder temperature(float temperature) {
             this.temperature = temperature;
             return this;
         }
 
-        public Builder scale(float scale) {
-            this.scale = scale;
-            return this;
-        }
-
         public Builder downfall(float downfall) {
             this.downfall = downfall;
-            return this;
-        }
-
-        public Builder category(Category category) {
-            this.category = category;
             return this;
         }
 
@@ -196,7 +139,7 @@ public final class Biome {
         }
 
         public Biome build() {
-            return new Biome(name, depth, temperature, scale, downfall, category, effects, precipitation, temperatureModifier);
+            return new Biome(name, temperature, downfall, effects, precipitation, temperatureModifier);
         }
     }
 

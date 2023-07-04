@@ -20,5 +20,4 @@ rootProject.name = "Minestom"
 include("code-generators")
 include("jmh-benchmarks")
 include("jcstress-tests")
-include("demo")
 include("testing")

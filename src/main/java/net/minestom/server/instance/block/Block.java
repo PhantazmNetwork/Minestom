@@ -5,6 +5,7 @@ import net.minestom.server.instance.Instance;
 import net.minestom.server.instance.batch.Batch;
 import net.minestom.server.registry.ProtocolObject;
 import net.minestom.server.registry.Registry;
+import net.minestom.server.sound.SoundEvent;
 import net.minestom.server.tag.Tag;
 import net.minestom.server.tag.TagReadable;
 import net.minestom.server.utils.NamespaceID;
@@ -155,6 +156,10 @@ public sealed interface Block extends ProtocolObject, TagReadable, Blocks permit
 
     default boolean isSolid() {
         return registry().isSolid();
+    }
+
+    default SoundEvent getStepSound() {
+        return registry().getStepSound();
     }
 
     default boolean isLiquid() {

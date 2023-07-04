@@ -1,11 +1,8 @@
 package net.minestom.server.entity;
 
-import com.extollit.gaming.ai.path.HydrazinePathFinder;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.entity.ai.EntityAI;
 import net.minestom.server.entity.ai.EntityAIGroup;
-import net.minestom.server.entity.pathfinding.NavigableEntity;
-import net.minestom.server.entity.pathfinding.Navigator;
 import net.minestom.server.event.EventDispatcher;
 import net.minestom.server.event.entity.EntityAttackEvent;
 import net.minestom.server.instance.Instance;
@@ -20,13 +17,11 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-public class EntityCreature extends LivingEntity implements NavigableEntity, EntityAI {
+public class EntityCreature extends LivingEntity implements EntityAI {
 
     private int removalAnimationDelay = 1000;
 
     private final Set<EntityAIGroup> aiGroups = new CopyOnWriteArraySet<>();
-
-    private final Navigator navigator = new Navigator(this);
 
     private Entity target;
 
@@ -47,17 +42,12 @@ public class EntityCreature extends LivingEntity implements NavigableEntity, Ent
         // AI
         aiTick(time);
 
-        // Path finding
-        this.navigator.tick();
-
         // Fire, item pickup, ...
         super.update(time);
     }
 
     @Override
     public CompletableFuture<Void> setInstance(@NotNull Instance instance, @NotNull Pos spawnPosition) {
-        this.navigator.setPathFinder(new HydrazinePathFinder(navigator.getPathingEntity(), instance.getInstanceSpace()));
-
         return super.setInstance(instance, spawnPosition);
     }
 
@@ -116,12 +106,6 @@ public class EntityCreature extends LivingEntity implements NavigableEntity, Ent
      */
     public void setTarget(@Nullable Entity target) {
         this.target = target;
-    }
-
-    @NotNull
-    @Override
-    public Navigator getNavigator() {
-        return navigator;
     }
 
     /**

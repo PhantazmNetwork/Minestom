@@ -62,9 +62,9 @@ public class LivingEntity extends Entity implements EquipmentHandler {
     private long fireExtinguishTime;
 
     /**
-     * Last time the fire damage was applied
+     * Last time this entity was attacked by another entity
      */
-    private long lastFireDamageTime;
+    private long lastEntityDamageTime;
 
     /**
      * Period, in ms, between two fire damage applications
@@ -187,15 +187,8 @@ public class LivingEntity extends Entity implements EquipmentHandler {
 
     @Override
     public void update(long time) {
-        if (isOnFire()) {
-            if (time > fireExtinguishTime) {
-                setOnFire(false);
-            } else {
-                if (time - lastFireDamageTime > fireDamagePeriod) {
-                    damage(DamageType.ON_FIRE, 1.0f);
-                    lastFireDamageTime = time;
-                }
-            }
+        if (isOnFire() && time > fireExtinguishTime) {
+            setOnFire(false);
         }
 
         // Items picking
@@ -321,17 +314,19 @@ public class LivingEntity extends Entity implements EquipmentHandler {
     }
 
     /**
-     * Damages the entity by a value, the type of the damage also has to be specified.
+     * Damages the entity by a value, the type of the damage also has to be specified. This may or may not take armor
+     * into account.
      *
      * @param damageType the damage type
      * @param value the amount of damage
+     * @param bypassArmor whether to consider armor in the final damage calculation
      * @return true if damage has been applied, false if it didn't
      */
-    public boolean damage(@NotNull DamageType damageType, float value) {
-        return damage(new Damage(damageType, null, null, null, value));
+    public boolean damage(@NotNull DamageType damageType, float value, boolean bypassArmor) {
+        return damage(new Damage(damageType, null, null, null, value), bypassArmor);
     }
 
-    public boolean damage(@NotNull Damage damage) {
+    public boolean damage(@NotNull Damage damage, boolean bypassArmor) {
         if (isDead())
             return false;
         if (isInvulnerable() || isImmune(damage.getType())) {
@@ -343,7 +338,20 @@ public class LivingEntity extends Entity implements EquipmentHandler {
             // Set the last damage type since the event is not cancelled
             this.lastDamageSource = entityDamageEvent.getDamage();
 
-            float remainingDamage = entityDamageEvent.getDamage().getAmount();
+            this.lastEntityDamageTime = System.currentTimeMillis();
+
+            float damageAmount = entityDamageEvent.getDamage().getAmount();
+            float remainingDamage;
+            if (!bypassArmor) {
+                float defensePoints = getAttributeValue(Attribute.ARMOR);
+                float toughness = getAttributeValue(Attribute.ARMOR_TOUGHNESS);
+
+
+                remainingDamage = damageAmount *
+                        (1F - (Math.max(defensePoints / 5F, defensePoints - ((4F * damageAmount) / (toughness + 8F))) / 25F));
+            } else {
+                remainingDamage = damageAmount;
+            }
 
             if (entityDamageEvent.shouldAnimate()) {
                 sendPacketToViewersAndSelf(new DamageEventPacket(getEntityId(), damage.getType().id(),
@@ -391,6 +399,17 @@ public class LivingEntity extends Entity implements EquipmentHandler {
         });
 
         return !entityDamageEvent.isCancelled();
+    }
+
+    /**
+     * Overload of {@link LivingEntity#damage(DamageType, float, boolean)} that bypasses armor.
+     *
+     * @param type  the damage type
+     * @param value the amount of damage
+     * @return true if damage has been applied, false if it didn't
+     */
+    public boolean damage(@NotNull DamageType type, float value) {
+        return damage(type, value, true);
     }
 
     /**
@@ -694,8 +713,8 @@ public class LivingEntity extends Entity implements EquipmentHandler {
      * @param z        knockback on z axle, for default knockback use the following formula <pre>-cos(attacker.yaw * (pi/180))</pre>
      */
     @Override
-    public void takeKnockback(float strength, final double x, final double z) {
+    public void takeKnockback(float strength, boolean horizontal, final double x, final double z) {
         strength *= 1 - getAttributeValue(Attribute.KNOCKBACK_RESISTANCE);
-        super.takeKnockback(strength, x, z);
+        super.takeKnockback(strength, horizontal, x, z);
     }
 }

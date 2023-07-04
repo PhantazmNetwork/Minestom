@@ -1,3 +1,4 @@
+@Suppress("DSL_SCOPE_VIOLATION")
 plugins {
     `java-library`
     id("minestom.publishing-conventions")
@@ -6,7 +7,7 @@ plugins {
 }
 
 allprojects {
-    group = "net.minestom.server"
+    group = "org.phantazm.Minestom"
     version = "1.0"
     description = "Lightweight and multi-threaded Minecraft server implementation"
 }
@@ -77,8 +78,6 @@ dependencies {
     // Libraries
     api(libs.gson)
     implementation(libs.jcTools)
-    // Path finding
-    api(libs.hydrazine)
 
     // Adventure, for user-interface
     api(libs.bundles.adventure)

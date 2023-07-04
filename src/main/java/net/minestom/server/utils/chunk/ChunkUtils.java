@@ -1,17 +1,24 @@
 package net.minestom.server.utils.chunk;
 
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Vec;
+import net.minestom.server.entity.Entity;
 import net.minestom.server.instance.Chunk;
 import net.minestom.server.instance.Instance;
 import net.minestom.server.utils.function.IntegerBiConsumer;
+import net.minestom.server.utils.function.IntegerBiPredicate;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+
+import static net.minestom.server.instance.Chunk.CHUNK_SIZE_X;
+import static net.minestom.server.instance.Chunk.CHUNK_SIZE_Z;
 
 @ApiStatus.Internal
 public final class ChunkUtils {
@@ -179,6 +186,75 @@ public final class ChunkUtils {
 
     public static void forChunksInRange(@NotNull Point point, int range, IntegerBiConsumer consumer) {
         forChunksInRange(point.chunkX(), point.chunkZ(), range, consumer);
+    }
+
+    public static void forChunksInRangeUntil(int chunkX, int chunkZ, int range, IntegerBiPredicate predicate) {
+        for (int x = -range; x <= range; ++x) {
+            for (int z = -range; z <= range; ++z) {
+                if (predicate.accept(chunkX + x, chunkZ + z)) {
+                    return;
+                }
+            }
+        }
+    }
+
+    public static void forChunksInRangeUntil(@NotNull Point point, int range, IntegerBiPredicate predicate) {
+        forChunksInRangeUntil(point.chunkX(), point.chunkZ(), range, predicate);
+    }
+
+    public static void raytraceCandidates(@NotNull Point start, @NotNull Point end, IntegerBiConsumer consumer) {
+        double startX = start.x() / CHUNK_SIZE_X;
+        double startZ = start.z() / CHUNK_SIZE_Z;
+
+        double endX = end.x() / CHUNK_SIZE_X;
+        double endZ = end.z() / CHUNK_SIZE_Z;
+
+        double dx = endX - startX;
+        double dz = endZ - startZ;
+
+        double m = dz / dx;
+
+        double step = Math.max(Math.abs(dx), Math.abs(dz));
+
+        double xi = dx / step;
+        double zi = dz / step;
+
+        double x = startX;
+        double z = startZ;
+
+        int lastChunkX = start.chunkX();
+        int lastChunkZ = start.chunkZ();
+
+        for (int i = 0; i <= (int) Math.ceil(step); i++) {
+            int chunkX = (int) Math.floor(x);
+            int chunkZ = (int) Math.floor(z);
+
+            if (chunkX != lastChunkX && chunkZ != lastChunkZ) {
+                double intercept = m * ((dx < 0 ? lastChunkX : chunkX) - startX) + startZ;
+
+                if (dz < 0) {
+                    if (intercept <= lastChunkZ) {
+                        consumer.accept(lastChunkX, chunkZ);
+                    } else {
+                        consumer.accept(chunkX, lastChunkZ);
+                    }
+                } else {
+                    if (intercept <= chunkZ) {
+                        consumer.accept(chunkX, lastChunkZ);
+                    } else {
+                        consumer.accept(lastChunkX, chunkZ);
+                    }
+                }
+            }
+
+            consumer.accept(chunkX, chunkZ);
+
+            x += xi;
+            z += zi;
+
+            lastChunkX = chunkX;
+            lastChunkZ = chunkZ;
+        }
     }
 
     /**

@@ -4,6 +4,7 @@ import net.minestom.server.event.trait.InstanceEvent;
 import net.minestom.server.instance.Instance;
 import org.jetbrains.annotations.NotNull;
 
+
 /**
  * Called when an instance is unregistered
  */

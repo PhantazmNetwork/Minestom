@@ -3,9 +3,20 @@ package net.minestom.server.collision;
 import net.minestom.server.coordinate.Point;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.UnmodifiableView;
+
+import java.util.List;
 
 @ApiStatus.Experimental
 public interface Shape {
+    /**
+     * Returns a list view of the BoundingBoxes making up this shape. If this shape does not have any "child" bounding
+     * boxes, this list will be empty.
+     *
+     * @return an immutable view of all bounding boxes making up this shape
+     */
+    @UnmodifiableView @NotNull List<BoundingBox> childBounds();
+
     /**
      * Checks if two bounding boxes intersect.
      *
@@ -41,4 +52,8 @@ public interface Shape {
      * @return End of shape
      */
     @NotNull Point relativeEnd();
+
+    boolean isFullBlock();
+
+    boolean isEmpty();
 }

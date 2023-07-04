@@ -7,8 +7,10 @@ import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.EventDispatcher;
+import net.minestom.server.event.instance.BlockChangeEvent;
 import net.minestom.server.event.instance.InstanceChunkLoadEvent;
 import net.minestom.server.event.instance.InstanceChunkUnloadEvent;
+import net.minestom.server.event.instance.PreBlockChangeEvent;
 import net.minestom.server.event.player.PlayerBlockBreakEvent;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockFace;
@@ -115,18 +117,24 @@ public class InstanceContainer extends Instance {
                                               @Nullable BlockHandler.Placement placement, @Nullable BlockHandler.Destroy destroy) {
         if (chunk.isReadOnly()) return;
         synchronized (chunk) {
+            final Vec blockPosition = new Vec(x, y, z);
+            final Block previousBlock = chunk.getBlock(blockPosition);
+            final BlockHandler previousHandler = previousBlock.handler();
+
+            PreBlockChangeEvent event = new PreBlockChangeEvent(blockPosition, previousBlock, block, this);
+            EventDispatcher.call(event);
+            if (event.isCancelled()) {
+                return;
+            }
+
             // Refresh the last block change time
             this.lastBlockChangeTime = System.currentTimeMillis();
-            final Vec blockPosition = new Vec(x, y, z);
             if (isAlreadyChanged(blockPosition, block)) { // do NOT change the block again.
                 // Avoids StackOverflowExceptions when onDestroy tries to destroy the block itself
                 // This can happen with nether portals which break the entire frame when a portal block is broken
                 return;
             }
             this.currentlyChangingBlocks.put(blockPosition, block);
-
-            final Block previousBlock = chunk.getBlock(blockPosition);
-            final BlockHandler previousHandler = previousBlock.handler();
 
             // Change id based on neighbors
             final BlockPlacementRule blockPlacementRule = MinecraftServer.getBlockManager().getBlockPlacementRule(block);
@@ -141,7 +149,7 @@ public class InstanceContainer extends Instance {
             executeNeighboursBlockPlacementRule(blockPosition);
 
             // Refresh player chunk block
-            {
+            if (event.syncClient()) {
                 chunk.sendPacketToViewers(new BlockChangePacket(blockPosition, block.stateId()));
                 var registry = block.registry();
                 if (registry.isBlockEntity()) {
@@ -162,6 +170,8 @@ public class InstanceContainer extends Instance {
                 handler.onPlace(Objects.requireNonNullElseGet(placement,
                         () -> new BlockHandler.Placement(finalBlock, this, blockPosition)));
             }
+
+            EventDispatcher.call(new BlockChangeEvent(blockPosition, previousBlock, block, this));
         }
     }
 
@@ -480,7 +490,21 @@ public class InstanceContainer extends Instance {
      * @return an {@link InstanceContainer} with the exact same chunks as 'this'
      * @see #getSrcInstance() to retrieve the "creation source" of the copied instance
      */
-    public synchronized InstanceContainer copy() {
+    public synchronized @NotNull InstanceContainer copy() {
+        return copyInternal();
+    }
+
+    /**
+     * Works similarly to {@link InstanceContainer#copy()}, but does not synchronize on the instance. This is safe to
+     * use if it can be proven that the chunks contained in this instance will not be mutated during the copy.
+     *
+     * @return a new {@link InstanceContainer}
+     */
+    public @NotNull InstanceContainer unsafeCopy() {
+        return copyInternal();
+    }
+
+    private InstanceContainer copyInternal() {
         InstanceContainer copiedInstance = new InstanceContainer(UUID.randomUUID(), getDimensionType());
         copiedInstance.srcInstance = this;
         copiedInstance.lastBlockChangeTime = lastBlockChangeTime;

@@ -2,6 +2,7 @@ package net.minestom.server.event.instance;
 
 import net.minestom.server.event.trait.InstanceEvent;
 import net.minestom.server.instance.Instance;
+import net.minestom.server.instance.InstanceManager;
 import org.jetbrains.annotations.NotNull;
 
 /**

@@ -39,7 +39,9 @@ public record LoginPluginResponsePacket(int messageId, byte @Nullable [] data) i
                 boolean success = false;
 
                 SocketAddress socketAddress = null;
+
                 GameProfile gameProfile = null;
+
 
                 // Velocity
                 if (VelocityProxy.isEnabled() && channel.equals(VelocityProxy.PLAYER_INFO_CHANNEL)) {

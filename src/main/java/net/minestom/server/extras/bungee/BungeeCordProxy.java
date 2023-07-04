@@ -14,7 +14,6 @@ import java.util.Set;
  * Please consider using {@link net.minestom.server.extras.velocity.VelocityProxy} instead.
  */
 public final class BungeeCordProxy {
-
     private static Set<String> bungeeGuardTokens = null;
 
     private static volatile boolean enabled;
@@ -64,5 +63,4 @@ public final class BungeeCordProxy {
     public static boolean isValidBungeeGuardToken(@NotNull String token) {
         return isBungeeGuardEnabled() && bungeeGuardTokens.contains(token);
     }
-
 }

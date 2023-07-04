@@ -7,17 +7,23 @@ import net.minestom.server.coordinate.Vec;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.registry.Registry;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.UnmodifiableView;
 
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 final class ShapeImpl implements Shape {
     private static final Pattern PATTERN = Pattern.compile("\\d.\\d{1,3}", Pattern.MULTILINE);
     private final BoundingBox[] blockSections;
+    private final List<BoundingBox> sectionsView;
     private final Point relativeStart, relativeEnd;
 
     private final Registry.BlockEntry blockEntry;
     private Block block;
+
+    private final boolean isFull;
+    private final boolean isEmpty;
 
     private ShapeImpl(BoundingBox[] boundingBoxes, Registry.BlockEntry blockEntry) {
         this.blockSections = boundingBoxes;
@@ -39,6 +45,11 @@ final class ShapeImpl implements Shape {
             this.relativeStart = new Vec(minX, minY, minZ);
             this.relativeEnd = new Vec(maxX, maxY, maxZ);
         }
+
+        this.isFull = boundingBoxes.length == 1 && relativeStart.isZero() && relativeEnd.samePoint(1, 1, 1);
+        this.isEmpty = relativeEnd.isZero();
+
+        this.sectionsView = List.of(boundingBoxes);
     }
 
     static ShapeImpl parseBlockFromRegistry(String str, Registry.BlockEntry blockEntry) {
@@ -77,6 +88,21 @@ final class ShapeImpl implements Shape {
     @Override
     public @NotNull Point relativeEnd() {
         return relativeEnd;
+    }
+
+    @Override
+    public boolean isFullBlock() {
+        return isFull;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return isEmpty;
+    }
+
+    @Override
+    public @UnmodifiableView @NotNull List<BoundingBox> childBounds() {
+        return sectionsView;
     }
 
     @Override

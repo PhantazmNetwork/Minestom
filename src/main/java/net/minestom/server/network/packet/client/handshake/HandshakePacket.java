@@ -56,6 +56,7 @@ public record HandshakePacket(int protocolVersion, @NotNull String serverAddress
     public void write(@NotNull NetworkBuffer writer) {
         writer.write(VAR_INT, protocolVersion);
         int maxLength = getMaxHandshakeLength();
+
         if (serverAddress.length() > maxLength) {
             throw new IllegalArgumentException("serverAddress is " + serverAddress.length() + " characters long, maximum allowed is " + maxLength);
         }
@@ -94,6 +95,7 @@ public record HandshakePacket(int protocolVersion, @NotNull String serverAddress
                 List<GameProfile.Property> properties = new ArrayList<>();
                 if (hasProperties) {
                     boolean foundBungeeGuardToken = false;
+
                     final String rawPropertyJson = split[3];
                     final JsonArray propertyJson = JsonParser.parseString(rawPropertyJson).getAsJsonArray();
                     for (JsonElement element : propertyJson) {

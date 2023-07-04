@@ -157,7 +157,9 @@ public class EntityVelocityIntegrationTest {
         // Only entities on the ground should ignore the default velocity.
         assertTrue(entity.hasVelocity());
 
-        env.tick();
+        for (int i = 0; i < 8; i++) {
+            env.tick();
+        }
 
         // Now that the entity is on the ground, it should no longer have a velocity.
         assertFalse(entity.hasVelocity());

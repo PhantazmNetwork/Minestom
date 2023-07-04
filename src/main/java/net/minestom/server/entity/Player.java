@@ -125,6 +125,11 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
     private DimensionType dimensionType;
     private GameMode gameMode;
     private DeathLocation deathLocation;
+
+    private long lastHurtTime;
+
+    private long minimumHurtDelay = 250L;
+
     /**
      * Keeps track of what chunks are sent to the client, this defines the center of the loaded area
      * in the range of {@link MinecraftServer#getChunkViewDistance()}
@@ -176,7 +181,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
 
     // Game state (https://wiki.vg/Protocol#Change_Game_State)
     private boolean enableRespawnScreen;
-    private final ChunkUpdateLimitChecker chunkUpdateLimitChecker = new ChunkUpdateLimitChecker(6);
+    private final ChunkUpdateLimitChecker chunkUpdateLimitChecker = new ChunkUpdateLimitChecker(5);
 
     // Experience orb pickup
     protected Cooldown experiencePickupCooldown = new Cooldown(Duration.of(10, TimeUnit.SERVER_TICK));
@@ -283,10 +288,17 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         PlayerSkinInitEvent skinInitEvent = new PlayerSkinInitEvent(this, profileSkin);
         EventDispatcher.call(skinInitEvent);
         this.skin = skinInitEvent.getSkin();
+
         // FIXME: when using Geyser, this line remove the skin of the client
-        PacketUtils.broadcastPacket(getAddPlayerToList());
-        for (var player : MinecraftServer.getConnectionManager().getOnlinePlayers()) {
-            if (player != this) sendPacket(player.getAddPlayerToList());
+        ServerPacket packet = getAddPlayerToList();
+        spawnInstance.sendGroupedPacket(packet);
+        sendPacket(packet);
+        for (Player player : spawnInstance.getEntityTracker().entities(EntityTracker.Target.PLAYERS)) {
+            if (player == this) {
+                continue;
+            }
+
+            sendPacket(player.getAddPlayerToList());
         }
 
         //Teams
@@ -389,6 +401,17 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
 
         // Tick event
         EventDispatcher.call(new PlayerTickEvent(this));
+    }
+
+    @Override
+    public boolean damage(@NotNull DamageType type, float value, boolean bypassArmor) {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastHurtTime < minimumHurtDelay) {
+            return false;
+        }
+
+        lastHurtTime = currentTime;
+        return super.damage(type, value, bypassArmor);
     }
 
     @Override
@@ -638,6 +661,10 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
     @Override
     public CompletableFuture<Void> setInstance(@NotNull Instance instance) {
         return setInstance(instance, this.instance != null ? getPosition() : getRespawnPoint());
+    }
+
+    public void setMinimumHurtDelay(long minimumHurtDelay) {
+        this.minimumHurtDelay = minimumHurtDelay;
     }
 
     /**
@@ -945,7 +972,11 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
      */
     public void setDisplayName(@Nullable Component displayName) {
         this.displayName = displayName;
-        PacketUtils.broadcastPacket(new PlayerInfoUpdatePacket(PlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME, infoEntry()));
+        if (instance == null) {
+            return;
+        }
+
+        instance.sendGroupedPacket(new PlayerInfoUpdatePacket(PlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME, infoEntry()));
     }
 
     /**
@@ -986,12 +1017,13 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         refreshClientStateAfterRespawn();
 
         {
+
             // Remove player
-            PacketUtils.broadcastPacket(removePlayerPacket);
+            instance.sendGroupedPacket(removePlayerPacket);
             sendPacketToViewers(destroyEntitiesPacket);
 
             // Show player again
-            PacketUtils.broadcastPacket(addPlayerPacket);
+            instance.sendGroupedPacket(addPlayerPacket);
             getViewers().forEach(player -> showPlayer(player.getPlayerConnection()));
         }
 
@@ -1312,7 +1344,10 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         // Condition to prevent sending the packets before spawning the player
         if (isActive()) {
             sendPacket(new ChangeGameStatePacket(ChangeGameStatePacket.Reason.CHANGE_GAMEMODE, gameMode.id()));
-            PacketUtils.broadcastPacket(new PlayerInfoUpdatePacket(PlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, infoEntry()));
+
+            if (instance != null) {
+                instance.sendGroupedPacket(new PlayerInfoUpdatePacket(PlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, infoEntry()));
+            }
         }
 
         // The client updates their abilities based on the GameMode as follows
@@ -1326,13 +1361,21 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
                 this.allowFlying = true;
                 this.instantBreak = false;
                 this.invulnerable = true;
-                this.flying = true;
+                if (isActive()) {
+                    refreshFlying(true);
+                } else {
+                    this.flying = true;
+                }
             }
             default -> {
                 this.allowFlying = false;
                 this.instantBreak = false;
                 this.invulnerable = false;
-                this.flying = false;
+                if (isActive()) {
+                    refreshFlying(false);
+                } else {
+                    this.flying = false;
+                }
             }
         }
         // Make sure that the player is in the PLAY state and synchronize their flight speed.
@@ -1796,7 +1839,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
     @ApiStatus.Internal
     @ApiStatus.Experimental
     public void interpretPacketQueue() {
-        if (this.packets.size() >= PACKET_QUEUE_SIZE) {
+        if (PACKET_QUEUE_SIZE >= 0 && this.packets.size() >= PACKET_QUEUE_SIZE) {
             kick(Component.text("Too Many Packets", NamedTextColor.RED));
             return;
         }
@@ -1812,7 +1855,11 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
      */
     public void refreshLatency(int latency) {
         this.latency = latency;
-        PacketUtils.broadcastPacket(new PlayerInfoUpdatePacket(PlayerInfoUpdatePacket.Action.UPDATE_LATENCY, infoEntry()));
+        if (instance == null) {
+            return;
+        }
+
+        instance.sendGroupedPacket(new PlayerInfoUpdatePacket(PlayerInfoUpdatePacket.Action.UPDATE_LATENCY, infoEntry()));
     }
 
     public void refreshOnGround(boolean onGround) {
@@ -1932,7 +1979,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
      *
      * @return a {@link PlayerInfoUpdatePacket} to add the player
      */
-    protected @NotNull PlayerInfoUpdatePacket getAddPlayerToList() {
+    public @NotNull PlayerInfoUpdatePacket getAddPlayerToList() {
         return new PlayerInfoUpdatePacket(EnumSet.of(PlayerInfoUpdatePacket.Action.ADD_PLAYER, PlayerInfoUpdatePacket.Action.UPDATE_LISTED),
                 List.of(infoEntry()));
     }
@@ -1942,7 +1989,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
      *
      * @return a {@link PlayerInfoRemovePacket} to remove the player
      */
-    protected @NotNull PlayerInfoRemovePacket getRemovePlayerToList() {
+    public @NotNull PlayerInfoRemovePacket getRemovePlayerToList() {
         return new PlayerInfoRemovePacket(getUuid());
     }
 
