@@ -55,6 +55,11 @@ public final class Registry {
     }
 
     @ApiStatus.Internal
+    public static DamageTypeEntry damageType(String namespace, @NotNull Properties main) {
+        return new DamageTypeEntry(namespace, main, null);
+    }
+
+    @ApiStatus.Internal
     public static Map<String, Map<String, Object>> load(Resource resource) {
         Map<String, Map<String, Object>> map = new HashMap<>();
         try (InputStream resourceStream = Registry.class.getClassLoader().getResourceAsStream(resource.name)) {
@@ -143,6 +148,7 @@ public final class Registry {
         POTION_EFFECTS("potion_effects.json"),
         POTION_TYPES("potions.json"),
         PARTICLES("particles.json"),
+        DAMAGE_TYPES("damage_types.json"),
         BANNER_PATTERNS("banner_patterns.json"),
 
         BLOCK_TAGS("tags/block_tags.json"),
@@ -418,6 +424,23 @@ public final class Registry {
         }
     }
 
+    public record DamageTypeEntry(NamespaceID namespace, float exhaustion,
+                                  String messageId,
+                                  String scaling,
+                                  @Nullable String effects,
+                                  @Nullable String deathMessageType,
+                                  Properties custom) implements Entry {
+        public DamageTypeEntry(String namespace, Properties main, Properties custom) {
+            this(NamespaceID.from(namespace),
+                    (float) main.getDouble("exhaustion"),
+                    main.getString("message_id"),
+                    main.getString("scaling"),
+                    main.getString("effects"),
+                    main.getString("death_message_type"),
+                    custom);
+        }
+    }
+
     public record PotionEffectEntry(NamespaceID namespace, int id,
                                     String translationKey,
                                     int color,
@@ -485,6 +508,17 @@ public final class Registry {
         }
 
         @Override
+        public double getFloat(String name, float defaultValue) {
+            var element = element(name);
+            return element != null ? ((Number) element).floatValue() : defaultValue;
+        }
+
+        @Override
+        public float getFloat(String name) {
+            return ((Number) element(name)).floatValue();
+        }
+
+        @Override
         public int getInt(String name, int defaultValue) {
             var element = element(name);
             return element != null ? ((Number) element).intValue() : defaultValue;
@@ -536,6 +570,10 @@ public final class Registry {
         double getDouble(String name, double defaultValue);
 
         double getDouble(String name);
+
+        double getFloat(String name, float defaultValue);
+
+        float getFloat(String name);
 
         int getInt(String name, int defaultValue);
 

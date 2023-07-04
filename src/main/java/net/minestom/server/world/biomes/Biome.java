@@ -57,7 +57,7 @@ public final class Biome {
             nbt.set("element", NBT.Compound(element -> {
                 element.setFloat("temperature", temperature);
                 element.setFloat("downfall", downfall);
-                element.setString("precipitation", precipitation.name().toLowerCase(Locale.ROOT));
+                element.setByte("has_precipitation", (byte) (precipitation == Precipitation.NONE ? 0 : 1));
                 if (temperatureModifier != TemperatureModifier.NONE)
                     element.setString("temperature_modifier", temperatureModifier.name().toLowerCase(Locale.ROOT));
                 element.set("effects", effects.toNbt());

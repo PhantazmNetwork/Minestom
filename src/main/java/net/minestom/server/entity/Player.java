@@ -256,7 +256,8 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         NBTCompound nbt = NBT.Compound(Map.of(
                 "minecraft:chat_type", Messenger.chatRegistry(),
                 "minecraft:dimension_type", MinecraftServer.getDimensionTypeManager().toNBT(),
-                "minecraft:worldgen/biome", MinecraftServer.getBiomeManager().toNBT()));
+                "minecraft:worldgen/biome", MinecraftServer.getBiomeManager().toNBT(),
+                "minecraft:damage_type", DamageType.getNBT()));
 
         final JoinGamePacket joinGamePacket = new JoinGamePacket(getEntityId(), false, gameMode, null,
                 List.of(dimensionType.getName().asString()), nbt, dimensionType.toString(), dimensionType.getName().asString(),
@@ -475,8 +476,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         refreshHealth();
 
         sendPacket(new RespawnPacket(getDimensionType().toString(), getDimensionType().getName().asString(),
-                0, gameMode, gameMode, false, levelFlat, true, deathLocation));
-
+               0, gameMode, gameMode, false, levelFlat, (byte) 0x03, deathLocation));
 
         PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(this);
         EventDispatcher.call(respawnEvent);
@@ -835,7 +835,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
     @Override
     public boolean isImmune(@NotNull DamageType type) {
         if (!getGameMode().canTakeDamage()) {
-            return type != DamageType.VOID;
+            return type != DamageType.OUT_OF_WORLD;
         }
         return super.isImmune(type);
     }
@@ -1008,7 +1008,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         final PlayerInfoUpdatePacket addPlayerPacket = getAddPlayerToList();
 
         RespawnPacket respawnPacket = new RespawnPacket(getDimensionType().toString(), getDimensionType().getName().asString(),
-                0, gameMode, gameMode, false, levelFlat, true, deathLocation);
+                0, gameMode, gameMode, false, levelFlat, (byte) 0x03, deathLocation);
 
         sendPacket(removePlayerPacket);
         sendPacket(destroyEntitiesPacket);
@@ -1195,6 +1195,10 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         sendPacketToViewersAndSelf(getEquipmentsPacket());
 
         getInventory().update();
+    }
+
+    public void sendScreenTilt(float tiltYaw) {
+        sendPacket(new HitAnimationPacket(getEntityId(), tiltYaw));
     }
 
     /**
@@ -1400,7 +1404,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
                 "The dimension needs to be different than the current one!");
         this.dimensionType = dimensionType;
         sendPacket(new RespawnPacket(dimensionType.toString(), getDimensionType().getName().asString(),
-                0, gameMode, gameMode, false, levelFlat, true, deathLocation));
+                0, gameMode, gameMode, false, levelFlat, (byte) 0x03, deathLocation));
         refreshClientStateAfterRespawn();
     }
 
@@ -1596,7 +1600,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
     @ApiStatus.Internal
     protected void synchronizePosition(boolean includeSelf) {
         if (includeSelf) {
-            sendPacket(new PlayerPositionAndLookPacket(position, (byte) 0x00, getNextTeleportId(), false));
+            sendPacket(new PlayerPositionAndLookPacket(position, (byte) 0x00, getNextTeleportId()));
         }
         super.synchronizePosition(includeSelf);
     }

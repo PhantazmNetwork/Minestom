@@ -6,6 +6,7 @@ import net.minestom.server.attribute.AttributeInstance;
 import net.minestom.server.collision.BoundingBox;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Vec;
+import net.minestom.server.entity.damage.Damage;
 import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.entity.metadata.LivingEntityMeta;
 import net.minestom.server.event.EventDispatcher;
@@ -19,10 +20,7 @@ import net.minestom.server.inventory.EquipmentHandler;
 import net.minestom.server.item.ItemStack;
 import net.minestom.server.network.ConnectionState;
 import net.minestom.server.network.packet.server.LazyPacket;
-import net.minestom.server.network.packet.server.play.CollectItemPacket;
-import net.minestom.server.network.packet.server.play.EntityAnimationPacket;
-import net.minestom.server.network.packet.server.play.EntityPropertiesPacket;
-import net.minestom.server.network.packet.server.play.SoundEffectPacket;
+import net.minestom.server.network.packet.server.play.*;
 import net.minestom.server.network.player.PlayerConnection;
 import net.minestom.server.scoreboard.Team;
 import net.minestom.server.sound.SoundEvent;
@@ -48,7 +46,7 @@ public class LivingEntity extends Entity implements EquipmentHandler {
 
     protected boolean isDead;
 
-    protected DamageType lastDamageSource;
+    protected Damage lastDamageSource;
 
     // Bounding box used for items' pickup (see LivingEntity#setBoundingBox)
     protected BoundingBox expandedBoundingBox;
@@ -319,43 +317,57 @@ public class LivingEntity extends Entity implements EquipmentHandler {
      * Damages the entity by a value, the type of the damage also has to be specified. This may or may not take armor
      * into account.
      *
-     * @param type        the damage type
-     * @param value       the amount of damage
+     * @param damageType the damage type
+     * @param value the amount of damage
      * @param bypassArmor whether to consider armor in the final damage calculation
      * @return true if damage has been applied, false if it didn't
      */
-    public boolean damage(@NotNull DamageType type, float value, boolean bypassArmor) {
+    public boolean damage(@NotNull DamageType damageType, float value, boolean bypassArmor) {
+        return damage(new Damage(damageType, null, null, null, value), bypassArmor);
+    }
+
+    public boolean damage(@NotNull Damage damage, boolean bypassArmor) {
         if (isDead())
             return false;
-        if (isInvulnerable() || isImmune(type)) {
+        if (isInvulnerable() || isImmune(damage.getType())) {
             return false;
         }
 
-        EntityDamageEvent entityDamageEvent = new EntityDamageEvent(this, type, value, type.getSound(this));
+        EntityDamageEvent entityDamageEvent = new EntityDamageEvent(this, damage, damage.getSound(this));
         EventDispatcher.callCancellable(entityDamageEvent, () -> {
             // Set the last damage type since the event is not cancelled
-            this.lastDamageSource = entityDamageEvent.getDamageType();
+            this.lastDamageSource = entityDamageEvent.getDamage();
+
             this.lastEntityDamageTime = System.currentTimeMillis();
 
-            float damage = entityDamageEvent.getDamage();
+            float damageAmount = entityDamageEvent.getDamage().getAmount();
             float remainingDamage;
             if (!bypassArmor) {
                 float defensePoints = getAttributeValue(Attribute.ARMOR);
                 float toughness = getAttributeValue(Attribute.ARMOR_TOUGHNESS);
 
 
-                remainingDamage = damage *
-                        (1F - (Math.max(defensePoints / 5F, defensePoints - ((4F * damage) / (toughness + 8F))) / 25F));
+                remainingDamage = damageAmount *
+                        (1F - (Math.max(defensePoints / 5F, defensePoints - ((4F * damageAmount) / (toughness + 8F))) / 25F));
             } else {
-                remainingDamage = damage;
+                remainingDamage = damageAmount;
             }
 
             if (entityDamageEvent.shouldAnimate()) {
-                sendPacketToViewersAndSelf(new EntityAnimationPacket(getEntityId(), EntityAnimationPacket.Animation.TAKE_DAMAGE));
+                sendPacketToViewersAndSelf(new DamageEventPacket(getEntityId(), damage.getType().id(),
+                        damage.getAttacker() == null ? 0 : damage.getAttacker().getEntityId() + 1,
+                        damage.getSource() == null ? 0 : damage.getSource().getEntityId() + 1, damage.getSourcePosition()));
             }
 
-            // Additional hearts support
             if (this instanceof Player player) {
+                if (damage.getAttacker() != null) {
+                    double dx = damage.getAttacker().getPosition().x() - position.x();
+                    double dz = damage.getAttacker().getPosition().z() - position.z();
+                    double dYaw = Math.toDegrees(Math.atan2(dz, dx)) - position.yaw();
+                    player.sendScreenTilt((float) dYaw);
+                }
+
+                // Additional hearts support
                 final float additionalHearts = player.getAdditionalHearts();
                 if (additionalHearts > 0) {
                     if (remainingDamage > additionalHearts) {
@@ -440,7 +452,7 @@ public class LivingEntity extends Entity implements EquipmentHandler {
      *
      * @return the last damage source, null if not any
      */
-    public @Nullable DamageType getLastDamageSource() {
+    public @Nullable Damage getLastDamageSource() {
         return lastDamageSource;
     }
 
@@ -605,7 +617,7 @@ public class LivingEntity extends Entity implements EquipmentHandler {
     protected void handleVoid() {
         // Kill if in void
         if (getInstance().isInVoid(this.position)) {
-            damage(DamageType.VOID, 10f);
+            damage(DamageType.OUT_OF_WORLD, 10f);
         }
     }
 
