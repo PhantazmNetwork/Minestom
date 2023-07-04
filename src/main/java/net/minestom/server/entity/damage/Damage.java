@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Represents a type of damage, required when calling {@link LivingEntity#damage(Damage)}
+ * Represents a type of damage, required when calling {@link LivingEntity#damage(Damage, boolean)}
  * and retrieved in {@link net.minestom.server.event.entity.EntityDamageEvent}.
  * <p>
  * This class can be extended if you need to include custom fields and/or methods.
