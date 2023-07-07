@@ -1,9 +1,5 @@
 package net.minestom.server.world.biomes;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minestom.server.utils.NamespaceID;
 import org.jglrxavpok.hephaistos.nbt.NBT;
 import org.jglrxavpok.hephaistos.nbt.NBTCompound;
@@ -12,6 +8,7 @@ import org.jglrxavpok.hephaistos.nbt.NBTType;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -20,8 +17,10 @@ import java.util.Map;
  * Contains {@link Biome#PLAINS} by default but can be removed.
  */
 public final class BiomeManager {
-    private final Object2IntMap<NamespaceID> nameToId = new Object2IntOpenHashMap<>();
-    private final Int2ObjectMap<Biome> idToBiome = new Int2ObjectOpenHashMap<>();
+    private final Map<NamespaceID, Integer> nameToId = new ConcurrentHashMap<>();
+    private final Map<Integer, Biome> idToBiome = new ConcurrentHashMap<>();
+    private final Map<NamespaceID, Biome> nameToBiome = new ConcurrentHashMap<>();
+    private final Object sync = new Object();
 
     public BiomeManager() {
         addBiome(0, Biome.PLAINS);
@@ -32,9 +31,12 @@ public final class BiomeManager {
      *
      * @param biome the biome to add
      */
-    public synchronized void addBiome(int id, Biome biome) {
-        this.nameToId.put(biome.name(), id);
-        this.idToBiome.put(id, biome);
+    public void addBiome(int id, Biome biome) {
+        synchronized (sync) {
+            this.nameToId.put(biome.name(), id);
+            this.idToBiome.put(id, biome);
+            this.nameToBiome.put(biome.name(), biome);
+        }
     }
 
     /**
@@ -42,9 +44,12 @@ public final class BiomeManager {
      *
      * @param biome the biome to remove
      */
-    public synchronized void removeBiome(Biome biome) {
-        int id = this.nameToId.removeInt(biome.name());
-        this.idToBiome.remove(id);
+    public void removeBiome(Biome biome) {
+        synchronized (sync) {
+            int id = this.nameToId.remove(biome.name());
+            this.idToBiome.remove(id);
+            this.nameToBiome.remove(biome.name());
+        }
     }
 
     /**
@@ -52,7 +57,7 @@ public final class BiomeManager {
      *
      * @return an immutable copy of the biomes already registered
      */
-    public synchronized Collection<Biome> unmodifiableCollection() {
+    public Collection<Biome> unmodifiableCollection() {
         return Collections.unmodifiableCollection(idToBiome.values());
     }
 
@@ -62,25 +67,25 @@ public final class BiomeManager {
      * @param id the id of the biome
      * @return the {@link Biome} linked to this id
      */
-    public synchronized Biome getById(int id) {
+    public Biome getById(int id) {
         return this.idToBiome.get(id);
     }
 
-    public synchronized Biome getByName(NamespaceID namespaceID) {
-        return this.idToBiome.get(this.nameToId.getInt(namespaceID));
+    public Biome getByName(NamespaceID namespaceID) {
+        return this.nameToBiome.get(namespaceID);
     }
 
-    public synchronized int getId(NamespaceID namespaceID) {
-        return this.nameToId.getInt(namespaceID);
+    public int getId(NamespaceID namespaceID) {
+        return this.nameToId.get(namespaceID);
     }
 
-    public synchronized int getId(Biome biome) {
-        return this.nameToId.getInt(biome.name());
+    public int getId(Biome biome) {
+        return this.nameToId.get(biome.name());
     }
 
     public synchronized NBTCompound toNBT() {
         return NBT.Compound(Map.of(
                 "type", NBT.String("minecraft:worldgen/biome"),
-                "value", NBT.List(NBTType.TAG_Compound, idToBiome.int2ObjectEntrySet().stream().map(entry -> entry.getValue().toNbt(entry.getIntKey())).toList())));
+                "value", NBT.List(NBTType.TAG_Compound, idToBiome.entrySet().stream().map(entry -> entry.getValue().toNbt(entry.getKey())).toList())));
     }
 }
