@@ -9,9 +9,10 @@ import org.jglrxavpok.hephaistos.nbt.NBT;
 import org.jglrxavpok.hephaistos.nbt.NBTCompound;
 import org.jglrxavpok.hephaistos.nbt.NBTType;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.StampedLock;
 
 
 /**
@@ -22,6 +23,7 @@ import java.util.Map;
 public final class BiomeManager {
     private final Object2IntMap<NamespaceID> nameToId = new Object2IntOpenHashMap<>();
     private final Int2ObjectMap<Biome> idToBiome = new Int2ObjectOpenHashMap<>();
+    private final StampedLock lock = new StampedLock();
 
     public BiomeManager() {
         addBiome(0, Biome.PLAINS);
@@ -33,8 +35,13 @@ public final class BiomeManager {
      * @param biome the biome to add
      */
     public synchronized void addBiome(int id, Biome biome) {
-        this.nameToId.put(biome.name(), id);
-        this.idToBiome.put(id, biome);
+        long stamp = lock.writeLock();
+        try {
+            this.nameToId.put(biome.name(), id);
+            this.idToBiome.put(id, biome);
+        } finally {
+            lock.unlockWrite(stamp);
+        }
     }
 
     /**
@@ -43,8 +50,13 @@ public final class BiomeManager {
      * @param biome the biome to remove
      */
     public synchronized void removeBiome(Biome biome) {
-        int id = this.nameToId.removeInt(biome.name());
-        this.idToBiome.remove(id);
+        long stamp = lock.writeLock();
+        try {
+            int id = this.nameToId.removeInt(biome.name());
+            this.idToBiome.remove(id);
+        } finally {
+            lock.unlockWrite(stamp);
+        }
     }
 
     /**
@@ -52,7 +64,7 @@ public final class BiomeManager {
      *
      * @return an immutable copy of the biomes already registered
      */
-    public synchronized Collection<Biome> unmodifiableCollection() {
+    public Collection<Biome> unmodifiableCollection() {
         return Collections.unmodifiableCollection(idToBiome.values());
     }
 
@@ -62,25 +74,75 @@ public final class BiomeManager {
      * @param id the id of the biome
      * @return the {@link Biome} linked to this id
      */
-    public synchronized Biome getById(int id) {
-        return this.idToBiome.get(id);
+    public Biome getById(int id) {
+        long optimisticReadStamp = lock.tryOptimisticRead();
+        if (lock.validate(optimisticReadStamp)) {
+            Biome biome = this.idToBiome.get(id);
+            if (lock.validate(optimisticReadStamp)) {
+                return biome;
+            }
+        }
+
+        long readStamp = lock.readLock();
+        try {
+            return this.idToBiome.get(id);
+        } finally {
+            lock.unlockRead(readStamp);
+        }
     }
 
-    public synchronized Biome getByName(NamespaceID namespaceID) {
-        return this.idToBiome.get(this.nameToId.getInt(namespaceID));
+    public Biome getByName(NamespaceID namespaceID) {
+        long optimisticReadStamp = lock.tryOptimisticRead();
+        if (lock.validate(optimisticReadStamp)) {
+            Biome biome = this.idToBiome.get(this.nameToId.getInt(namespaceID));
+            if (lock.validate(optimisticReadStamp)) {
+                return biome;
+            }
+        }
+
+        long readStamp = lock.readLock();
+        try {
+            return this.idToBiome.get(this.nameToId.getInt(namespaceID));
+        } finally {
+            lock.unlockRead(readStamp);
+        }
     }
 
-    public synchronized int getId(NamespaceID namespaceID) {
-        return this.nameToId.getInt(namespaceID);
+    public int getId(NamespaceID namespaceID) {
+        long optimisticReadStamp = lock.tryOptimisticRead();
+        if (lock.validate(optimisticReadStamp)) {
+            int id = this.nameToId.getInt(namespaceID);
+            if (lock.validate(optimisticReadStamp)) {
+                return id;
+            }
+        }
+
+        long readStamp = lock.readLock();
+        try {
+            return this.nameToId.getInt(namespaceID);
+        } finally {
+            lock.unlockRead(readStamp);
+        }
     }
 
-    public synchronized int getId(Biome biome) {
-        return this.nameToId.getInt(biome.name());
+    public int getId(Biome biome) {
+        return getId(biome.name());
     }
 
     public synchronized NBTCompound toNBT() {
+        List<NBTCompound> biomeNBT;
+        long readStamp = lock.readLock();
+        try {
+            biomeNBT = new ArrayList<>(idToBiome.size());
+            for (Int2ObjectMap.Entry<Biome> entry : idToBiome.int2ObjectEntrySet()) {
+                biomeNBT.add(entry.getValue().toNbt(entry.getIntKey()));
+            }
+        } finally {
+            lock.unlockRead(readStamp);
+        }
+
         return NBT.Compound(Map.of(
                 "type", NBT.String("minecraft:worldgen/biome"),
-                "value", NBT.List(NBTType.TAG_Compound, idToBiome.int2ObjectEntrySet().stream().map(entry -> entry.getValue().toNbt(entry.getIntKey())).toList())));
+                "value", NBT.List(NBTType.TAG_Compound, biomeNBT)));
     }
 }
