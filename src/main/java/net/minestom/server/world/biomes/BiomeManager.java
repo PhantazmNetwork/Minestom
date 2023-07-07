@@ -10,7 +10,8 @@ import org.jglrxavpok.hephaistos.nbt.NBTCompound;
 import org.jglrxavpok.hephaistos.nbt.NBTType;
 
 import java.util.*;
-import java.util.concurrent.locks.StampedLock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
 /**
@@ -21,7 +22,7 @@ import java.util.concurrent.locks.StampedLock;
 public final class BiomeManager {
     private final Object2IntMap<NamespaceID> nameToId = new Object2IntOpenHashMap<>();
     private final Int2ObjectMap<Biome> idToBiome = new Int2ObjectOpenHashMap<>();
-    private final StampedLock lock = new StampedLock();
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     public BiomeManager() {
         addBiome(0, Biome.PLAINS);
@@ -33,12 +34,12 @@ public final class BiomeManager {
      * @param biome the biome to add
      */
     public void addBiome(int id, Biome biome) {
-        long stamp = lock.writeLock();
+        lock.writeLock().lock();
         try {
             this.nameToId.put(biome.name(), id);
             this.idToBiome.put(id, biome);
         } finally {
-            lock.unlockWrite(stamp);
+            lock.writeLock().unlock();
         }
     }
 
@@ -48,12 +49,12 @@ public final class BiomeManager {
      * @param biome the biome to remove
      */
     public void removeBiome(Biome biome) {
-        long stamp = lock.writeLock();
+        lock.writeLock().lock();
         try {
             int id = this.nameToId.removeInt(biome.name());
             this.idToBiome.remove(id);
         } finally {
-            lock.unlockWrite(stamp);
+            lock.writeLock().unlock();
         }
     }
 
@@ -73,53 +74,29 @@ public final class BiomeManager {
      * @return the {@link Biome} linked to this id
      */
     public Biome getById(int id) {
-        long optimisticReadStamp = lock.tryOptimisticRead();
-        if (lock.validate(optimisticReadStamp)) {
-            Biome biome = this.idToBiome.get(id);
-            if (lock.validate(optimisticReadStamp)) {
-                return biome;
-            }
-        }
-
-        long readStamp = lock.readLock();
+        lock.readLock().lock();
         try {
             return this.idToBiome.get(id);
         } finally {
-            lock.unlockRead(readStamp);
+            lock.readLock().unlock();
         }
     }
 
     public Biome getByName(NamespaceID namespaceID) {
-        long optimisticReadStamp = lock.tryOptimisticRead();
-        if (lock.validate(optimisticReadStamp)) {
-            Biome biome = this.idToBiome.get(this.nameToId.getInt(namespaceID));
-            if (lock.validate(optimisticReadStamp)) {
-                return biome;
-            }
-        }
-
-        long readStamp = lock.readLock();
+        lock.readLock();
         try {
             return this.idToBiome.get(this.nameToId.getInt(namespaceID));
         } finally {
-            lock.unlockRead(readStamp);
+            lock.readLock().unlock();
         }
     }
 
     public int getId(NamespaceID namespaceID) {
-        long optimisticReadStamp = lock.tryOptimisticRead();
-        if (lock.validate(optimisticReadStamp)) {
-            int id = this.nameToId.getInt(namespaceID);
-            if (lock.validate(optimisticReadStamp)) {
-                return id;
-            }
-        }
-
-        long readStamp = lock.readLock();
+        lock.readLock();
         try {
             return this.nameToId.getInt(namespaceID);
         } finally {
-            lock.unlockRead(readStamp);
+            lock.readLock().unlock();
         }
     }
 
@@ -129,14 +106,14 @@ public final class BiomeManager {
 
     public NBTCompound toNBT() {
         List<NBTCompound> biomeNBT;
-        long readStamp = lock.readLock();
+        lock.readLock();
         try {
             biomeNBT = new ArrayList<>(idToBiome.size());
             for (Int2ObjectMap.Entry<Biome> entry : idToBiome.int2ObjectEntrySet()) {
                 biomeNBT.add(entry.getValue().toNbt(entry.getIntKey()));
             }
         } finally {
-            lock.unlockRead(readStamp);
+            lock.readLock().unlock();
         }
 
         return NBT.Compound(Map.of(
