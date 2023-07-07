@@ -127,7 +127,7 @@ public final class BiomeManager {
         return getId(biome.name());
     }
 
-    public synchronized NBTCompound toNBT() {
+    public NBTCompound toNBT() {
         List<NBTCompound> biomeNBT;
         long readStamp = lock.readLock();
         try {
