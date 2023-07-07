@@ -10,8 +10,6 @@ import org.jglrxavpok.hephaistos.nbt.NBTCompound;
 import org.jglrxavpok.hephaistos.nbt.NBTType;
 
 import java.util.*;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.StampedLock;
 
 
@@ -34,7 +32,7 @@ public final class BiomeManager {
      *
      * @param biome the biome to add
      */
-    public synchronized void addBiome(int id, Biome biome) {
+    public void addBiome(int id, Biome biome) {
         long stamp = lock.writeLock();
         try {
             this.nameToId.put(biome.name(), id);
@@ -49,7 +47,7 @@ public final class BiomeManager {
      *
      * @param biome the biome to remove
      */
-    public synchronized void removeBiome(Biome biome) {
+    public void removeBiome(Biome biome) {
         long stamp = lock.writeLock();
         try {
             int id = this.nameToId.removeInt(biome.name());
