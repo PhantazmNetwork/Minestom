@@ -83,7 +83,7 @@ public final class BiomeManager {
     }
 
     public Biome getByName(NamespaceID namespaceID) {
-        lock.readLock();
+        lock.readLock().lock();
         try {
             return this.idToBiome.get(this.nameToId.getInt(namespaceID));
         } finally {
@@ -92,7 +92,7 @@ public final class BiomeManager {
     }
 
     public int getId(NamespaceID namespaceID) {
-        lock.readLock();
+        lock.readLock().lock();
         try {
             return this.nameToId.getInt(namespaceID);
         } finally {
@@ -106,7 +106,7 @@ public final class BiomeManager {
 
     public NBTCompound toNBT() {
         List<NBTCompound> biomeNBT;
-        lock.readLock();
+        lock.readLock().lock();
         try {
             biomeNBT = new ArrayList<>(idToBiome.size());
             for (Int2ObjectMap.Entry<Biome> entry : idToBiome.int2ObjectEntrySet()) {
