@@ -18,6 +18,7 @@ import java.util.*;
  */
 public final class BiomeManager {
     private volatile Maps maps = new Maps(new Object2IntOpenHashMap<>(), new Int2ObjectOpenHashMap<>());
+    private final Object lock = new Object();
 
     private record Maps(Object2IntMap<NamespaceID> nameToId, Int2ObjectMap<Biome> idToBiome) {
         private Maps copy() {
@@ -35,12 +36,14 @@ public final class BiomeManager {
      * @param biome the biome to add
      */
     public void addBiome(int id, Biome biome) {
-        Maps maps = this.maps;
-        Maps newMaps = maps.copy();
-        newMaps.nameToId.put(biome.name(), id);
-        newMaps.idToBiome.put(id, biome);
+        synchronized (lock) {
+            Maps maps = this.maps;
+            Maps newMaps = maps.copy();
+            newMaps.nameToId.put(biome.name(), id);
+            newMaps.idToBiome.put(id, biome);
 
-        this.maps = newMaps;
+            this.maps = newMaps;
+        }
     }
 
     /**
@@ -49,12 +52,14 @@ public final class BiomeManager {
      * @param biome the biome to remove
      */
     public void removeBiome(Biome biome) {
-        Maps maps = this.maps;
-        Maps newMaps = maps.copy();
-        int id = newMaps.nameToId.removeInt(biome.name());
-        newMaps.idToBiome.remove(id);
+        synchronized (lock) {
+            Maps maps = this.maps;
+            Maps newMaps = maps.copy();
+            int id = newMaps.nameToId.removeInt(biome.name());
+            newMaps.idToBiome.remove(id);
 
-        this.maps = newMaps;
+            this.maps = newMaps;
+        }
     }
 
     /**
