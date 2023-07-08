@@ -2,9 +2,11 @@ package net.minestom.server.world.biomes;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntObjectPair;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minestom.server.utils.NamespaceID;
+import org.jetbrains.annotations.NotNull;
 import org.jglrxavpok.hephaistos.nbt.NBT;
 import org.jglrxavpok.hephaistos.nbt.NBTCompound;
 import org.jglrxavpok.hephaistos.nbt.NBTType;
@@ -39,8 +41,28 @@ public final class BiomeManager {
         synchronized (lock) {
             Maps maps = this.maps;
             Maps newMaps = maps.copy();
+
             newMaps.nameToId.put(biome.name(), id);
             newMaps.idToBiome.put(id, biome);
+
+            this.maps = newMaps;
+        }
+    }
+
+    /**
+     * Adds multiple biomes to the manager. This does NOT send the new list to players.
+     *
+     * @param biomes the biomes to add, along with their identifiers.
+     */
+    public void addBiomes(@NotNull Collection<IntObjectPair<Biome>> biomes) {
+        synchronized (lock) {
+            Maps maps = this.maps;
+            Maps newMaps = maps.copy();
+
+            for (IntObjectPair<Biome> pair : biomes) {
+                newMaps.nameToId.put(pair.right().name(), pair.firstInt());
+                newMaps.idToBiome.put(pair.firstInt(), pair.right());
+            }
 
             this.maps = newMaps;
         }
@@ -55,6 +77,7 @@ public final class BiomeManager {
         synchronized (lock) {
             Maps maps = this.maps;
             Maps newMaps = maps.copy();
+
             int id = newMaps.nameToId.removeInt(biome.name());
             newMaps.idToBiome.remove(id);
 
