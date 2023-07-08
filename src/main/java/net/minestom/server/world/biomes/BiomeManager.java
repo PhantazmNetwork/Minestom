@@ -10,9 +10,6 @@ import org.jglrxavpok.hephaistos.nbt.NBTCompound;
 import org.jglrxavpok.hephaistos.nbt.NBTType;
 
 import java.util.*;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 
 /**
  * Allows servers to register custom dimensions. Also used during player joining to send the list of all existing dimensions.
@@ -20,9 +17,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Contains {@link Biome#PLAINS} by default but can be removed.
  */
 public final class BiomeManager {
-    private final Object2IntMap<NamespaceID> nameToId = new Object2IntOpenHashMap<>();
-    private final Int2ObjectMap<Biome> idToBiome = new Int2ObjectOpenHashMap<>();
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private volatile Maps maps = new Maps(new Object2IntOpenHashMap<>(), new Int2ObjectOpenHashMap<>());
+
+    private record Maps(Object2IntMap<NamespaceID> nameToId, Int2ObjectMap<Biome> idToBiome) {
+        private Maps copy() {
+            return new Maps(new Object2IntOpenHashMap<>(nameToId), new Int2ObjectOpenHashMap<>(idToBiome));
+        }
+    }
 
     public BiomeManager() {
         addBiome(0, Biome.PLAINS);
@@ -34,13 +35,12 @@ public final class BiomeManager {
      * @param biome the biome to add
      */
     public void addBiome(int id, Biome biome) {
-        lock.writeLock().lock();
-        try {
-            this.nameToId.put(biome.name(), id);
-            this.idToBiome.put(id, biome);
-        } finally {
-            lock.writeLock().unlock();
-        }
+        Maps maps = this.maps;
+        Maps newMaps = maps.copy();
+        newMaps.nameToId.put(biome.name(), id);
+        newMaps.idToBiome.put(id, biome);
+
+        this.maps = newMaps;
     }
 
     /**
@@ -49,13 +49,12 @@ public final class BiomeManager {
      * @param biome the biome to remove
      */
     public void removeBiome(Biome biome) {
-        lock.writeLock().lock();
-        try {
-            int id = this.nameToId.removeInt(biome.name());
-            this.idToBiome.remove(id);
-        } finally {
-            lock.writeLock().unlock();
-        }
+        Maps maps = this.maps;
+        Maps newMaps = maps.copy();
+        int id = newMaps.nameToId.removeInt(biome.name());
+        newMaps.idToBiome.remove(id);
+
+        this.maps = newMaps;
     }
 
     /**
@@ -64,7 +63,7 @@ public final class BiomeManager {
      * @return an immutable copy of the biomes already registered
      */
     public Collection<Biome> unmodifiableCollection() {
-        return Collections.unmodifiableCollection(idToBiome.values());
+        return Collections.unmodifiableCollection(maps.idToBiome.values());
     }
 
     /**
@@ -74,30 +73,16 @@ public final class BiomeManager {
      * @return the {@link Biome} linked to this id
      */
     public Biome getById(int id) {
-        lock.readLock().lock();
-        try {
-            return this.idToBiome.get(id);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return maps.idToBiome.get(id);
     }
 
     public Biome getByName(NamespaceID namespaceID) {
-        lock.readLock().lock();
-        try {
-            return this.idToBiome.get(this.nameToId.getInt(namespaceID));
-        } finally {
-            lock.readLock().unlock();
-        }
+        Maps maps = this.maps;
+        return maps.idToBiome.get(maps.nameToId.getInt(namespaceID));
     }
 
     public int getId(NamespaceID namespaceID) {
-        lock.readLock().lock();
-        try {
-            return this.nameToId.getInt(namespaceID);
-        } finally {
-            lock.readLock().unlock();
-        }
+        return maps.nameToId.getInt(namespaceID);
     }
 
     public int getId(Biome biome) {
@@ -105,15 +90,11 @@ public final class BiomeManager {
     }
 
     public NBTCompound toNBT() {
-        List<NBTCompound> biomeNBT;
-        lock.readLock().lock();
-        try {
-            biomeNBT = new ArrayList<>(idToBiome.size());
-            for (Int2ObjectMap.Entry<Biome> entry : idToBiome.int2ObjectEntrySet()) {
-                biomeNBT.add(entry.getValue().toNbt(entry.getIntKey()));
-            }
-        } finally {
-            lock.readLock().unlock();
+        Maps maps = this.maps;
+
+        List<NBTCompound> biomeNBT = new ArrayList<>(maps.idToBiome.size());
+        for (Int2ObjectMap.Entry<Biome> entry : maps.idToBiome.int2ObjectEntrySet()) {
+            biomeNBT.add(entry.getValue().toNbt(entry.getIntKey()));
         }
 
         return NBT.Compound(Map.of(
