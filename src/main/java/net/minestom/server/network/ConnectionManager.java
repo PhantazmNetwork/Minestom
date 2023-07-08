@@ -31,8 +31,9 @@ import java.util.function.Function;
  * Manages the connected clients.
  */
 public final class ConnectionManager {
-    private static final long KEEP_ALIVE_DELAY = 10_000;
-    private static final long KEEP_ALIVE_KICK = 30_000;
+    private static final long KEEP_ALIVE_DELAY = Long.getLong("minestom.keep-alive-delay", 10_000);
+    private static final long KEEP_ALIVE_KICK = Long.getLong("minestom.keep-alive-kick", 30_000);
+
     private static final Component TIMEOUT_TEXT = Component.text("Timeout", NamedTextColor.RED);
 
     private final MessagePassingQueue<Player> waitingPlayers = new MpscUnboundedArrayQueue<>(64);
@@ -285,7 +286,7 @@ public final class ConnectionManager {
             if (lastKeepAlive > KEEP_ALIVE_DELAY && player.didAnswerKeepAlive()) {
                 player.refreshKeepAlive(tickStart);
                 player.sendPacket(keepAlivePacket);
-            } else if (lastKeepAlive >= KEEP_ALIVE_KICK) {
+            } else if (KEEP_ALIVE_KICK >= 0 && lastKeepAlive >= KEEP_ALIVE_KICK) {
                 player.kick(TIMEOUT_TEXT);
             }
         }
