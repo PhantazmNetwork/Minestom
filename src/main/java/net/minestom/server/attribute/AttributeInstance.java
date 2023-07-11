@@ -2,11 +2,10 @@ package net.minestom.server.attribute;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -14,7 +13,7 @@ import java.util.function.Consumer;
  */
 public final class AttributeInstance {
     private final Attribute attribute;
-    private final Map<UUID, AttributeModifier> modifiers = new HashMap<>();
+    private final Map<UUID, AttributeModifier> modifiers = new ConcurrentHashMap<>();
     private final Consumer<AttributeInstance> propertyChangeListener;
     private float baseValue;
     private float cachedValue = 0.0f;
@@ -64,6 +63,8 @@ public final class AttributeInstance {
      * @param modifier the modifier to add
      */
     public void addModifier(@NotNull AttributeModifier modifier) {
+        Map<UUID, AttributeModifier> modifiers = new HashMap<>(this.modifiers);
+
         if (modifiers.putIfAbsent(modifier.getId(), modifier) == null) {
             refreshCachedValue();
         }
@@ -95,8 +96,8 @@ public final class AttributeInstance {
      * @return the modifiers.
      */
     @NotNull
-    public Collection<AttributeModifier> getModifiers() {
-        return modifiers.values();
+    public @Unmodifiable Collection<AttributeModifier> getModifiers() {
+        return List.copyOf(modifiers.values());
     }
 
     /**
