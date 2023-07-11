@@ -63,8 +63,6 @@ public final class AttributeInstance {
      * @param modifier the modifier to add
      */
     public void addModifier(@NotNull AttributeModifier modifier) {
-        Map<UUID, AttributeModifier> modifiers = new HashMap<>(this.modifiers);
-
         if (modifiers.putIfAbsent(modifier.getId(), modifier) == null) {
             refreshCachedValue();
         }
