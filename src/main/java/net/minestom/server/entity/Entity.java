@@ -262,16 +262,6 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     }
 
     /**
-     * Whether {@link EntityTracker}s this entity is registered to need to ensure atomicity between adding this entity
-     * to the tracker and calling {@link Entity#onInstanceAdd()}.
-     *
-     * @return true if synchronization is needed; false otherwise
-     */
-    public boolean synchronizeOnInstanceAdd() {
-        return false;
-    }
-
-    /**
      * Called after an entity is added to an instance's {@link EntityTracker}, but before the entity spawns.
      */
     public void onInstanceAdd() {
