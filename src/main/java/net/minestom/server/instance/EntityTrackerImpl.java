@@ -35,6 +35,7 @@ final class EntityTrackerImpl implements EntityTracker {
     // The array index is the Target enum ordinal
     final TargetEntry<Entity>[] entries = EntityTracker.Target.TARGETS.stream().map((Function<Target<?>, TargetEntry>) TargetEntry::new).toArray(TargetEntry[]::new);
     private final Int2ObjectSyncMap<Point> entityPositions = Int2ObjectSyncMap.hashmap();
+    private final Object sync = new Object();
 
     @Override
     public <T extends Entity> void register(@NotNull Entity entity, @NotNull Point point,
@@ -42,6 +43,25 @@ final class EntityTrackerImpl implements EntityTracker {
         var prevPoint = entityPositions.putIfAbsent(entity.getEntityId(), point);
         if (prevPoint != null) return;
         final long index = getChunkIndex(point);
+
+        if (entity.synchronizeOnInstanceAdd()) {
+            synchronized (sync) {
+                register0(entity, index);
+            }
+        } else {
+            register0(entity, index);
+        }
+
+        if (update != null) {
+            update.referenceUpdate(point, this);
+            nearbyEntitiesByChunkRange(point, MinecraftServer.getEntityViewDistance(), target, newEntity -> {
+                if (newEntity == entity) return;
+                update.add(newEntity);
+            });
+        }
+    }
+
+    private void register0(Entity entity, long index) {
         for (TargetEntry<Entity> entry : entries) {
             if (entry.target.type().isInstance(entity)) {
                 entry.entities.add(entity);
@@ -50,13 +70,6 @@ final class EntityTrackerImpl implements EntityTracker {
         }
 
         entity.onInstanceAdd();
-        if (update != null) {
-            update.referenceUpdate(point, this);
-            nearbyEntitiesByChunkRange(point, MinecraftServer.getEntityViewDistance(), target, newEntity -> {
-                if (newEntity == entity) return;
-                update.add(newEntity);
-            });
-        }
     }
 
     @Override

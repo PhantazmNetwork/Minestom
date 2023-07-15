@@ -408,6 +408,11 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
     }
 
     @Override
+    public boolean synchronizeOnInstanceAdd() {
+        return true;
+    }
+
+    @Override
     public void onInstanceAdd() {
         synchronized (instanceAddSync) {
             Runnable runnable = this.instanceAddCallback;
