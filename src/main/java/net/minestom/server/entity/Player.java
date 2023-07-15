@@ -129,7 +129,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
 
     private long lastHurtTime;
 
-    private long minimumHurtDelay = 500L;
+    private long minimumHurtDelay = 400L;
 
     /**
      * Keeps track of what chunks are sent to the client, this defines the center of the loaded area
