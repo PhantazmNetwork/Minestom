@@ -262,6 +262,13 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     }
 
     /**
+     * Called after an entity is added to an instance's {@link EntityTracker}, but before the entity spawns.
+     */
+    public void onInstanceAdd() {
+
+    }
+
+    /**
      * Called when a new instance is set.
      */
     public void spawn() {

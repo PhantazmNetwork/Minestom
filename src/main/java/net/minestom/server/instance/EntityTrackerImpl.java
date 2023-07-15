@@ -8,8 +8,6 @@ import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.Player;
-import net.minestom.server.instance.block.Block;
-import net.minestom.server.network.ConnectionManager;
 import net.minestom.server.utils.chunk.ChunkUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -50,6 +48,8 @@ final class EntityTrackerImpl implements EntityTracker {
                 entry.addToChunk(index, entity);
             }
         }
+
+        entity.onInstanceAdd();
         if (update != null) {
             update.referenceUpdate(point, this);
             nearbyEntitiesByChunkRange(point, MinecraftServer.getEntityViewDistance(), target, newEntity -> {
