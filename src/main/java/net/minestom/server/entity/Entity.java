@@ -269,6 +269,17 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     }
 
     /**
+     * Whether this entity should be atomically added to an instance's tracker, its {@link Entity#onInstanceAdd()}
+     * method called, and update function invoked to spawn the entity. Unnecessary for most entities, required for
+     * players when setting instance-specific tablists in an asynchronous context.
+     *
+     * @return whether we need to synchronize in this manner
+     */
+    public boolean synchronizeInstanceAdd() {
+        return this instanceof Player;
+    }
+
+    /**
      * Called when a new instance is set.
      */
     public void spawn() {

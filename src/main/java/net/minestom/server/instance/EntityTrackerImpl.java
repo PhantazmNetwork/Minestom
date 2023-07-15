@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -35,22 +36,34 @@ final class EntityTrackerImpl implements EntityTracker {
     // The array index is the Target enum ordinal
     final TargetEntry<Entity>[] entries = EntityTracker.Target.TARGETS.stream().map((Function<Target<?>, TargetEntry>) TargetEntry::new).toArray(TargetEntry[]::new);
     private final Int2ObjectSyncMap<Point> entityPositions = Int2ObjectSyncMap.hashmap();
+    private final ReentrantLock lock = new ReentrantLock();
 
     @Override
     public <T extends Entity> void register(@NotNull Entity entity, @NotNull Point point,
                                             @NotNull Target<T> target, @Nullable Update<T> update) {
-        var prevPoint = entityPositions.putIfAbsent(entity.getEntityId(), point);
-        if (prevPoint != null) return;
-        final long index = getChunkIndex(point);
+        boolean locked = entity.synchronizeInstanceAdd();
+        if (locked) {
+            lock.lock();
+        }
 
-        register0(entity, index);
+        try {
+            var prevPoint = entityPositions.putIfAbsent(entity.getEntityId(), point);
+            if (prevPoint != null) return;
+            final long index = getChunkIndex(point);
 
-        if (update != null) {
-            update.referenceUpdate(point, this);
-            nearbyEntitiesByChunkRange(point, MinecraftServer.getEntityViewDistance(), target, newEntity -> {
-                if (newEntity == entity) return;
-                update.add(newEntity);
-            });
+            register0(entity, index);
+
+            if (update != null) {
+                update.referenceUpdate(point, this);
+                nearbyEntitiesByChunkRange(point, MinecraftServer.getEntityViewDistance(), target, newEntity -> {
+                    if (newEntity == entity) return;
+                    update.add(newEntity);
+                });
+            }
+        } finally {
+            if (locked) {
+                lock.unlock();
+            }
         }
     }
 
