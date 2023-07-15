@@ -25,6 +25,7 @@ import net.minestom.server.coordinate.Point;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.effects.Effects;
+import net.minestom.server.entity.damage.Damage;
 import net.minestom.server.entity.damage.DamageType;
 import net.minestom.server.entity.fakeplayer.FakePlayer;
 import net.minestom.server.entity.metadata.PlayerMeta;
@@ -128,7 +129,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
 
     private long lastHurtTime;
 
-    private long minimumHurtDelay = 250L;
+    private long minimumHurtDelay = 500L;
 
     /**
      * Keeps track of what chunks are sent to the client, this defines the center of the loaded area
@@ -404,14 +405,14 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
     }
 
     @Override
-    public boolean damage(@NotNull DamageType type, float value, boolean bypassArmor) {
+    public boolean damage(@NotNull Damage damage, boolean bypassArmor) {
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastHurtTime < minimumHurtDelay) {
             return false;
         }
 
         lastHurtTime = currentTime;
-        return super.damage(type, value, bypassArmor);
+        return super.damage(damage, bypassArmor);
     }
 
     @Override
@@ -476,7 +477,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         refreshHealth();
 
         sendPacket(new RespawnPacket(getDimensionType().toString(), getDimensionType().getName().asString(),
-               0, gameMode, gameMode, false, levelFlat, (byte) 0x03, deathLocation));
+                0, gameMode, gameMode, false, levelFlat, (byte) 0x03, deathLocation));
 
         PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(this);
         EventDispatcher.call(respawnEvent);
