@@ -176,6 +176,7 @@ public final class Registry {
         private final double jumpFactor;
         private final boolean air;
         private final boolean solid;
+        private final int mapBaseColorId;
         private final SoundEvent stepSound;
         private final boolean liquid;
         private final String blockEntity;
@@ -197,6 +198,7 @@ public final class Registry {
             this.jumpFactor = main.getDouble("jumpFactor", 1);
             this.air = main.getBoolean("air", false);
             this.solid = main.getBoolean("solid");
+            this.mapBaseColorId = main.getInt("mapColorId");
             this.stepSound = SoundEvent.fromId(main.getInt("stepSoundId"));
             this.liquid = main.getBoolean("liquid", false);
             {
@@ -261,6 +263,10 @@ public final class Registry {
 
         public boolean isSolid() {
             return solid;
+        }
+
+        public int getMapBaseColorId() {
+            return mapBaseColorId;
         }
 
         public SoundEvent getStepSound() {
