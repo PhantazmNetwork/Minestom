@@ -127,6 +127,10 @@ public final class InstanceManager {
     @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
     private void unregister0(Instance instance) {
         synchronized (instance) {
+            // Unregister
+            instance.setRegistered(false);
+            this.instances.remove(instance);
+
             InstanceUnregisterEvent event = new InstanceUnregisterEvent(instance);
             EventDispatcher.call(event);
 
@@ -136,9 +140,6 @@ public final class InstanceManager {
                 var dispatcher = MinecraftServer.process().dispatcher();
                 instance.getChunks().forEach(dispatcher::deletePartition);
             }
-            // Unregister
-            instance.setRegistered(false);
-            this.instances.remove(instance);
         }
     }
 
