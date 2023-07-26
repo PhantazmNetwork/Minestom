@@ -18,7 +18,6 @@ import net.minestom.server.MinecraftServer;
 import net.minestom.server.advancements.AdvancementTab;
 import net.minestom.server.adventure.AdventurePacketConvertor;
 import net.minestom.server.adventure.Localizable;
-import net.minestom.server.adventure.audience.Audiences;
 import net.minestom.server.attribute.Attribute;
 import net.minestom.server.command.CommandSender;
 import net.minestom.server.coordinate.Point;
@@ -481,7 +480,10 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
 
             // #buildDeathMessage can return null, check here
             if (chatMessage != null) {
-                Audiences.players().sendMessage(chatMessage);
+                Instance instance = getInstance();
+                if (instance != null) {
+                    instance.sendMessage(chatMessage);
+                }
             }
 
             // Set death location
