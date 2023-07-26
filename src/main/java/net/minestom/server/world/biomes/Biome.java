@@ -8,7 +8,6 @@ import org.jglrxavpok.hephaistos.nbt.NBT;
 import org.jglrxavpok.hephaistos.nbt.NBTCompound;
 
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public final class Biome {
     private static final BiomeEffects DEFAULT_EFFECTS = BiomeEffects.builder()
@@ -30,15 +29,15 @@ public final class Biome {
     private final float temperature;
     private final float downfall;
     private final BiomeEffects effects;
-    private final Precipitation precipitation;
+    private final boolean hasPrecipitation;
     private final TemperatureModifier temperatureModifier;
 
-    Biome(NamespaceID name, float temperature, float downfall, BiomeEffects effects, Precipitation precipitation, TemperatureModifier temperatureModifier) {
+    Biome(NamespaceID name, float temperature, float downfall, BiomeEffects effects, boolean hasPrecipitation, TemperatureModifier temperatureModifier) {
         this.name = name;
         this.temperature = temperature;
         this.downfall = downfall;
         this.effects = effects;
-        this.precipitation = precipitation;
+        this.hasPrecipitation = hasPrecipitation;
         this.temperatureModifier = temperatureModifier;
     }
 
@@ -57,7 +56,7 @@ public final class Biome {
             nbt.set("element", NBT.Compound(element -> {
                 element.setFloat("temperature", temperature);
                 element.setFloat("downfall", downfall);
-                element.setByte("has_precipitation", (byte) (precipitation == Precipitation.NONE ? 0 : 1));
+                element.setByte("has_precipitation", (byte) (hasPrecipitation ? 1 : 0));
                 if (temperatureModifier != TemperatureModifier.NONE)
                     element.setString("temperature_modifier", temperatureModifier.name().toLowerCase(Locale.ROOT));
                 element.set("effects", effects.toNbt());
@@ -81,8 +80,8 @@ public final class Biome {
         return this.effects;
     }
 
-    public Precipitation precipitation() {
-        return this.precipitation;
+    public boolean hasPrecipitation() {
+        return hasPrecipitation;
     }
 
     public TemperatureModifier temperatureModifier() {
@@ -102,7 +101,7 @@ public final class Biome {
         private float temperature = 0.25f;
         private float downfall = 0.8f;
         private BiomeEffects effects = DEFAULT_EFFECTS;
-        private Precipitation precipitation = Precipitation.RAIN;
+        private boolean hasPrecipitation;
         private TemperatureModifier temperatureModifier = TemperatureModifier.NONE;
 
         Builder() {
@@ -128,8 +127,8 @@ public final class Biome {
             return this;
         }
 
-        public Builder precipitation(Precipitation precipitation) {
-            this.precipitation = precipitation;
+        public Builder hasPrecipitation(boolean hasPrecipitation) {
+            this.hasPrecipitation = hasPrecipitation;
             return this;
         }
 
@@ -139,7 +138,7 @@ public final class Biome {
         }
 
         public Biome build() {
-            return new Biome(name, temperature, downfall, effects, precipitation, temperatureModifier);
+            return new Biome(name, temperature, downfall, effects, hasPrecipitation, temperatureModifier);
         }
     }
 
