@@ -120,8 +120,8 @@ public final class InstanceManager {
      * @param instance the instance to unregister
      */
     public void forceUnregisterInstance(@NotNull Instance instance) {
-        unregister0(instance);
         instance.getPlayers().forEach(player -> player.kick("The world you were in was unloaded by the server!"));
+        unregister0(instance);
     }
 
     @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
