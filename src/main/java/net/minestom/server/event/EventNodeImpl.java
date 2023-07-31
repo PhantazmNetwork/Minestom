@@ -333,7 +333,10 @@ non-sealed class EventNodeImpl<T extends Event> implements EventNode<T> {
         }
 
         void invalidate() {
-            this.updated = false;
+            synchronized (GLOBAL_CHILD_LOCK) {
+                this.updated = false;
+                this.listener = null;
+            }
         }
 
         @Nullable Consumer<E> updatedListener() {
