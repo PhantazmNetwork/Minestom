@@ -179,6 +179,10 @@ final class EntityTrackerImpl implements EntityTracker {
             if (chunkEntities != null && !chunkEntities.isEmpty()) {
                 for (T entity : chunkEntities) {
                     final Point position = entityPositions.get(entity.getEntityId());
+                    if (position == null) {
+                        continue;
+                    }
+
                     if (point.distanceSquared(position) <= squaredRange && query.test(entity))
                         return;
                 }
@@ -192,6 +196,10 @@ final class EntityTrackerImpl implements EntityTracker {
 
                 for (T entity : chunkEntities) {
                     final Point position = entityPositions.get(entity.getEntityId());
+                    if (position == null) {
+                        continue;
+                    }
+
                     if (point.distanceSquared(position) <= squaredRange && query.test(entity))
                         return true;
                 }
