@@ -72,11 +72,6 @@ public final class PacketListenerManager {
 
         PacketListenerConsumer<T> packetListenerConsumer = listeners.get(clazz);
 
-        // Listener can be null if none has been set before, call PacketConsumer anyway
-        if (packetListenerConsumer == null) {
-            LOGGER.warn("Packet " + clazz + " does not have any default listener! (The issue comes from Minestom)");
-        }
-
         // Event
         PlayerPacketEvent playerPacketEvent = new PlayerPacketEvent(player, packet);
         EventDispatcher.call(playerPacketEvent);
