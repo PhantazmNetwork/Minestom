@@ -20,4 +20,6 @@ public interface TagWritable {
     default void removeTag(@NotNull Tag<?> tag) {
         setTag(tag, null);
     }
+
+    void clearTags();
 }

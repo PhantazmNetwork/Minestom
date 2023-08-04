@@ -84,6 +84,15 @@ final class TagHandlerImpl implements TagHandler {
     }
 
     @Override
+    public void clearTags() {
+        synchronized (this) {
+            root.entries.clear();
+            root.compound = null;
+            copy = null;
+        }
+    }
+
+    @Override
     public <T> void updateTag(@NotNull Tag<T> tag, @NotNull UnaryOperator<@UnknownNullability T> value) {
         updateTag0(tag, value, false);
     }

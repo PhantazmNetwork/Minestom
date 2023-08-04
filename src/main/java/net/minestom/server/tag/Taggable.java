@@ -27,4 +27,8 @@ public interface Taggable extends TagReadable, TagWritable {
     default void removeTag(@NotNull Tag<?> tag) {
         tagHandler().removeTag(tag);
     }
+    
+    default void clearTags() {
+        tagHandler().clearTags();
+    }
 }

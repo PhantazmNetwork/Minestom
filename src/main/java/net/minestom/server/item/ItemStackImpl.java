@@ -159,6 +159,11 @@ record ItemStackImpl(Material material, int amount, ItemMetaImpl meta) implement
         }
 
         @Override
+        public void clearTags() {
+            this.metaBuilder.clearTags();
+        }
+
+        @Override
         public @NotNull ItemStack build() {
             return ItemStackImpl.create(material, amount, metaBuilder.build());
         }

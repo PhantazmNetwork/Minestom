@@ -22,6 +22,8 @@ sealed interface StaticIntMap<T> permits StaticIntMap.Array {
 
     void updateContent(@NotNull StaticIntMap<T> content);
 
+    void clear();
+
     final class Array<T> implements StaticIntMap<T> {
         private static final Object[] EMPTY_ARRAY = new Object[0];
 
@@ -71,6 +73,12 @@ sealed interface StaticIntMap<T> permits StaticIntMap.Array {
             } else {
                 throw new IllegalArgumentException("Invalid content type: " + content.getClass());
             }
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public void clear() {
+            this.array = (T[]) EMPTY_ARRAY;
         }
 
         @Override
