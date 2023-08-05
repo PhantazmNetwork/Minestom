@@ -43,6 +43,11 @@ public final class Server {
     }
 
     @ApiStatus.Internal
+    public void wakeupWorkers() {
+        workers.forEach(worker -> worker.selector.wakeup());
+    }
+
+    @ApiStatus.Internal
     public void init(SocketAddress address) throws IOException {
         ProtocolFamily family;
         if (address instanceof InetSocketAddress inetSocketAddress) {
@@ -101,7 +106,7 @@ public final class Server {
     public void stop() {
         this.stop = true;
         try {
-            if(serverSocket != null) {
+            if (serverSocket != null) {
                 this.serverSocket.close();
             }
 

@@ -308,6 +308,8 @@ final class ServerProcessImpl implements ServerProcess {
                 final TickMonitor tickMonitor = new TickMonitor(tickTimeMs, acquisitionTimeMs);
                 EventDispatcher.call(new ServerTickMonitorEvent(tickMonitor));
             }
+
+            server.wakeupWorkers();
         }
 
         private void serverTick(long tickStart) {
