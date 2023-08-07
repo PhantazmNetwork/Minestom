@@ -44,7 +44,7 @@ public class LivingEntity extends Entity implements EquipmentHandler {
     protected boolean canPickupItem;
     protected Cooldown itemPickupCooldown = new Cooldown(Duration.of(5, TimeUnit.SERVER_TICK));
 
-    protected boolean isDead;
+    protected volatile boolean isDead;
 
     protected Damage lastDamageSource;
 
@@ -268,8 +268,22 @@ public class LivingEntity extends Entity implements EquipmentHandler {
             getPassengers().forEach(this::removePassenger);
         }
 
+        Team team = this.team;
+        if (team != null) {
+            team.removeMember(uuid.toString());
+        }
+
         EntityDeathEvent entityDeathEvent = new EntityDeathEvent(this);
         EventDispatcher.call(entityDeathEvent);
+    }
+
+    @Override
+    public void remove() {
+        super.remove();
+        Team team = this.team;
+        if (team != null) {
+            team.removeMember(uuid.toString());
+        }
     }
 
     /**
@@ -317,8 +331,8 @@ public class LivingEntity extends Entity implements EquipmentHandler {
      * Damages the entity by a value, the type of the damage also has to be specified. This may or may not take armor
      * into account.
      *
-     * @param damageType the damage type
-     * @param value the amount of damage
+     * @param damageType  the damage type
+     * @param value       the amount of damage
      * @param bypassArmor whether to consider armor in the final damage calculation
      * @return true if damage has been applied, false if it didn't
      */
@@ -656,7 +670,8 @@ public class LivingEntity extends Entity implements EquipmentHandler {
      * @param team The new team
      */
     public void setTeam(@Nullable Team team) {
-        if (this.team == team) return;
+        if (this.team == team || isDead || isRemoved()) return;
+
         String member = this instanceof Player player ? player.getUsername() : uuid.toString();
         if (this.team != null) {
             this.team.removeMember(member);
