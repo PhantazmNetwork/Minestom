@@ -43,11 +43,6 @@ public final class Server {
     }
 
     @ApiStatus.Internal
-    public void wakeupWorkers() {
-        workers.forEach(worker -> worker.selector.wakeup());
-    }
-
-    @ApiStatus.Internal
     public void init(SocketAddress address) throws IOException {
         ProtocolFamily family;
         if (address instanceof InetSocketAddress inetSocketAddress) {
