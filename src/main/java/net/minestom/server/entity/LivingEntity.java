@@ -271,6 +271,7 @@ public class LivingEntity extends Entity implements EquipmentHandler {
         Team team = this.team;
         if (team != null) {
             team.removeMember(uuid.toString());
+            this.team = null;
         }
 
         EntityDeathEvent entityDeathEvent = new EntityDeathEvent(this);
@@ -283,6 +284,7 @@ public class LivingEntity extends Entity implements EquipmentHandler {
         Team team = this.team;
         if (team != null) {
             team.removeMember(uuid.toString());
+            this.team = null;
         }
     }
 
