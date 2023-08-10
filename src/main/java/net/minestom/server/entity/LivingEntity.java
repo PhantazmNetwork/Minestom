@@ -255,6 +255,8 @@ public class LivingEntity extends Entity implements EquipmentHandler {
      * Kills the entity, trigger the {@link EntityDeathEvent} event.
      */
     public void kill() {
+        removeFromTeam();
+
         refreshIsDead(true); // So the entity isn't killed over and over again
         triggerStatus((byte) 3); // Start death animation status
         setPose(Pose.DYING);
@@ -268,22 +270,29 @@ public class LivingEntity extends Entity implements EquipmentHandler {
             getPassengers().forEach(this::removePassenger);
         }
 
-        Team team = this.team;
-        if (team != null) {
-            team.removeMember(uuid.toString());
-        }
-
         EntityDeathEvent entityDeathEvent = new EntityDeathEvent(this);
         EventDispatcher.call(entityDeathEvent);
     }
 
-    @Override
-    public void remove() {
-        super.remove();
+    private void removeFromTeam() {
         Team team = this.team;
-        if (team != null) {
+        if (team == null) {
+            return;
+        }
+
+        if (this instanceof Player player) {
+            team.removeMember(player.getUsername());
+        } else {
             team.removeMember(uuid.toString());
         }
+
+        this.team = null;
+    }
+
+    @Override
+    public void remove() {
+        removeFromTeam();
+        super.remove();
     }
 
     /**
