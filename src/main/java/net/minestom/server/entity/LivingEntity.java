@@ -347,25 +347,13 @@ public class LivingEntity extends Entity implements EquipmentHandler {
             return false;
         }
 
-        EntityDamageEvent entityDamageEvent = new EntityDamageEvent(this, damage, damage.getSound(this));
+        EntityDamageEvent entityDamageEvent = new EntityDamageEvent(this, damage,
+                computeActualDamage(damage.getAmount(), bypassArmor), damage.getSound(this));
         EventDispatcher.callCancellable(entityDamageEvent, () -> {
             // Set the last damage type since the event is not cancelled
             this.lastDamageSource = entityDamageEvent.getDamage();
 
             this.lastEntityDamageTime = System.currentTimeMillis();
-
-            float damageAmount = entityDamageEvent.getDamage().getAmount();
-            float remainingDamage;
-            if (!bypassArmor) {
-                float defensePoints = getAttributeValue(Attribute.ARMOR);
-                float toughness = getAttributeValue(Attribute.ARMOR_TOUGHNESS);
-
-
-                remainingDamage = damageAmount *
-                        (1F - (Math.max(defensePoints / 5F, defensePoints - ((4F * damageAmount) / (toughness + 8F))) / 25F));
-            } else {
-                remainingDamage = damageAmount;
-            }
 
             if (entityDamageEvent.shouldAnimate()) {
                 sendPacketToViewersAndSelf(new DamageEventPacket(getEntityId(), damage.getType().id(),
@@ -373,6 +361,7 @@ public class LivingEntity extends Entity implements EquipmentHandler {
                         damage.getSource() == null ? 0 : damage.getSource().getEntityId() + 1, damage.getSourcePosition()));
             }
 
+            float actualDamage = entityDamageEvent.getActualAmount();
             if (this instanceof Player player) {
                 if (damage.getAttacker() != null) {
                     double dx = damage.getAttacker().getPosition().x() - position.x();
@@ -384,18 +373,18 @@ public class LivingEntity extends Entity implements EquipmentHandler {
                 // Additional hearts support
                 final float additionalHearts = player.getAdditionalHearts();
                 if (additionalHearts > 0) {
-                    if (remainingDamage > additionalHearts) {
-                        remainingDamage -= additionalHearts;
+                    if (actualDamage > additionalHearts) {
+                        actualDamage -= additionalHearts;
                         player.setAdditionalHearts(0);
                     } else {
-                        player.setAdditionalHearts(additionalHearts - remainingDamage);
-                        remainingDamage = 0;
+                        player.setAdditionalHearts(additionalHearts - actualDamage);
+                        actualDamage = 0;
                     }
                 }
             }
 
             // Set the final entity health
-            setHealth(getHealth() - remainingDamage);
+            setHealth(getHealth() - actualDamage);
 
             // play damage sound
             final SoundEvent sound = entityDamageEvent.getSound();
@@ -413,6 +402,21 @@ public class LivingEntity extends Entity implements EquipmentHandler {
         });
 
         return !entityDamageEvent.isCancelled();
+    }
+
+    public float computeActualDamage(float incoming, boolean bypassArmor) {
+        float remainingDamage;
+        if (!bypassArmor) {
+            float defensePoints = getAttributeValue(Attribute.ARMOR);
+            float toughness = getAttributeValue(Attribute.ARMOR_TOUGHNESS);
+
+            remainingDamage = incoming *
+                    (1F - (Math.max(defensePoints / 5F, defensePoints - ((4F * incoming) / (toughness + 8F))) / 25F));
+        } else {
+            remainingDamage = incoming;
+        }
+
+        return remainingDamage;
     }
 
     /**
