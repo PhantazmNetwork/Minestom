@@ -6,7 +6,7 @@ metadata.format.version = "1.1"
 adventure = "4.12.0"
 kotlin = "1.7.22"
 dependencyGetter = "v1.0.1"
-minestomData = "23a3278308"
+minestomData = "3e7a93f5e7"
 hephaistos = "2.5.3"
 jetbrainsAnnotations = "23.0.0"
 
