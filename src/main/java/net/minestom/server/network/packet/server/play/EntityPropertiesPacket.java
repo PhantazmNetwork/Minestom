@@ -36,8 +36,20 @@ public record EntityPropertiesPacket(int entityId, List<AttributeInstance> prope
     @Override
     public void write(@NotNull NetworkBuffer writer) {
         writer.write(VAR_INT, entityId);
-        writer.write(VAR_INT, properties.size());
+
+        int size = 0;
         for (AttributeInstance instance : properties) {
+            if (instance.getAttribute().sendToClient()) {
+                size++;
+            }
+        }
+
+        writer.write(VAR_INT, size);
+        for (AttributeInstance instance : properties) {
+            if (!instance.getAttribute().sendToClient()) {
+                continue;
+            }
+
             final Attribute attribute = instance.getAttribute();
 
             writer.write(STRING, attribute.key());

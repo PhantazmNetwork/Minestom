@@ -251,6 +251,21 @@ public class LivingEntity extends Entity implements EquipmentHandler {
         this.invulnerable = invulnerable;
     }
 
+    private void removeFromTeam() {
+        Team team = this.team;
+        if (team == null) {
+            return;
+        }
+
+        if (this instanceof Player player) {
+            team.removeMember(player.getUsername());
+        } else {
+            team.removeMember(uuid.toString());
+        }
+
+        this.team = null;
+    }
+
     /**
      * Kills the entity, trigger the {@link EntityDeathEvent} event.
      */
@@ -272,21 +287,6 @@ public class LivingEntity extends Entity implements EquipmentHandler {
 
         EntityDeathEvent entityDeathEvent = new EntityDeathEvent(this);
         EventDispatcher.call(entityDeathEvent);
-    }
-
-    private void removeFromTeam() {
-        Team team = this.team;
-        if (team == null) {
-            return;
-        }
-
-        if (this instanceof Player player) {
-            team.removeMember(player.getUsername());
-        } else {
-            team.removeMember(uuid.toString());
-        }
-
-        this.team = null;
     }
 
     @Override
