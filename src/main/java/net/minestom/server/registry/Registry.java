@@ -390,6 +390,7 @@ public final class Registry {
                               double drag, double acceleration,
                               EntitySpawnType spawnType,
                               BoundingBox boundingBox,
+                              boolean sendsAttributes,
                               Properties custom) implements Entry {
         public EntityEntry(String namespace, Properties main, Properties custom) {
             this(NamespaceID.from(namespace),
@@ -404,6 +405,7 @@ public final class Registry {
                             main.getDouble("width"),
                             main.getDouble("height"),
                             main.getDouble("width")),
+                    main.getBoolean("sendsAttributes"),
                     custom
             );
         }
