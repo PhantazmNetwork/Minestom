@@ -310,6 +310,10 @@ public final class MinecraftServer {
         return serverProcess.server();
     }
 
+    public static int currentTick() {
+        return serverProcess.ticker().currentTick();
+    }
+
     /**
      * Starts the server.
      * <p>

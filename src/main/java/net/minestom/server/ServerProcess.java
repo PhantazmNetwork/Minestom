@@ -147,5 +147,7 @@ public interface ServerProcess extends Snapshotable {
     @ApiStatus.NonExtendable
     interface Ticker {
         void tick(long nanoTime);
+
+        int currentTick();
     }
 }

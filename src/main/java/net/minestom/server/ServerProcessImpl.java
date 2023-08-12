@@ -283,6 +283,8 @@ final class ServerProcessImpl implements ServerProcess {
     }
 
     private final class TickerImpl implements Ticker {
+        private int currentTick = 0;
+
         @Override
         public void tick(long nanoTime) {
             final long msTime = System.currentTimeMillis();
@@ -308,6 +310,13 @@ final class ServerProcessImpl implements ServerProcess {
                 final TickMonitor tickMonitor = new TickMonitor(tickTimeMs, acquisitionTimeMs);
                 EventDispatcher.call(new ServerTickMonitorEvent(tickMonitor));
             }
+
+            currentTick++;
+        }
+
+        @Override
+        public int currentTick() {
+            return currentTick;
         }
 
         private void serverTick(long tickStart) {
