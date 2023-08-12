@@ -518,6 +518,10 @@ public class LivingEntity extends Entity implements EquipmentHandler {
      * @param attributeInstance the modified attribute instance
      */
     protected void onAttributeChanged(@NotNull AttributeInstance attributeInstance) {
+        if (!entityType.registry().sendsAttributes()) {
+            return;
+        }
+
         boolean self = false;
         if (this instanceof Player player) {
             PlayerConnection playerConnection = player.playerConnection;
@@ -574,7 +578,11 @@ public class LivingEntity extends Entity implements EquipmentHandler {
     public void updateNewViewer(@NotNull Player player) {
         super.updateNewViewer(player);
         player.sendPacket(new LazyPacket(this::getEquipmentsPacket));
-        player.sendPacket(new LazyPacket(this::getPropertiesPacket));
+
+        if (entityType.registry().sendsAttributes()) {
+            player.sendPacket(new LazyPacket(this::getPropertiesPacket));
+        }
+
         if (getTeam() != null) player.sendPacket(getTeam().createTeamsCreationPacket());
     }
 
