@@ -42,6 +42,10 @@ public interface PermissionHandler {
         getAllPermissions().addAll(permissions);
     }
 
+    default void clearPermissions() {
+        getAllPermissions().clear();
+    }
+
     /**
      * Removes a {@link Permission} from this handler.
      *
