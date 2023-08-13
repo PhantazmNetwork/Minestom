@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jglrxavpok.hephaistos.nbt.NBTCompound;
 import org.jglrxavpok.hephaistos.parser.SNBTParser;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -35,6 +36,10 @@ public interface PermissionHandler {
      */
     default void addPermission(@NotNull Permission permission) {
         getAllPermissions().add(permission);
+    }
+
+    default void addPermissions(@NotNull Collection<? extends Permission> permissions) {
+        getAllPermissions().addAll(permissions);
     }
 
     /**
@@ -120,7 +125,9 @@ public interface PermissionHandler {
             return false;
         }
         // If no permission verifier, hand off to no-verifier hasPermission for wildcard support
-        if(permissionVerifier == null) { return hasPermission(permission); }
+        if (permissionVerifier == null) {
+            return hasPermission(permission);
+        }
         // Verify using the permission verifier
         return permissionVerifier.isValid(permission.getNBTData());
     }
