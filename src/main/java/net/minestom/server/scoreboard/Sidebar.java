@@ -208,14 +208,16 @@ public class Sidebar implements Scoreboard {
     public boolean addViewer(@NotNull Player player) {
         final boolean result = this.viewers.add(player);
 
-        ScoreboardObjectivePacket scoreboardObjectivePacket = this.getCreationObjectivePacket(this.title, ScoreboardObjectivePacket.Type.INTEGER);
-        DisplayScoreboardPacket displayScoreboardPacket = this.getDisplayScoreboardPacket((byte) 1);
+        if (result) {
+            ScoreboardObjectivePacket scoreboardObjectivePacket = this.getCreationObjectivePacket(this.title, ScoreboardObjectivePacket.Type.INTEGER);
+            DisplayScoreboardPacket displayScoreboardPacket = this.getDisplayScoreboardPacket((byte) 1);
 
-        player.sendPacket(scoreboardObjectivePacket); // Creative objective
-        player.sendPacket(displayScoreboardPacket); // Show sidebar scoreboard (wait for scores packet)
-        for (ScoreboardLine line : lines) {
-            player.sendPacket(line.sidebarTeam.getCreationPacket());
-            player.sendPacket(line.getScoreCreationPacket(objectiveName));
+            player.sendPacket(scoreboardObjectivePacket); // Creative objective
+            player.sendPacket(displayScoreboardPacket); // Show sidebar scoreboard (wait for scores packet)
+            for (ScoreboardLine line : lines) {
+                player.sendPacket(line.sidebarTeam.getCreationPacket());
+                player.sendPacket(line.getScoreCreationPacket(objectiveName));
+            }
         }
         return result;
     }
@@ -223,11 +225,13 @@ public class Sidebar implements Scoreboard {
     @Override
     public boolean removeViewer(@NotNull Player player) {
         final boolean result = this.viewers.remove(player);
-        ScoreboardObjectivePacket scoreboardObjectivePacket = this.getDestructionObjectivePacket();
-        player.sendPacket(scoreboardObjectivePacket);
-        for (ScoreboardLine line : lines) {
-            player.sendPacket(line.getScoreDestructionPacket(objectiveName)); // Is it necessary?
-            player.sendPacket(line.sidebarTeam.getDestructionPacket());
+        if (result) {
+            ScoreboardObjectivePacket scoreboardObjectivePacket = this.getDestructionObjectivePacket();
+            player.sendPacket(scoreboardObjectivePacket);
+            for (ScoreboardLine line : lines) {
+                player.sendPacket(line.getScoreDestructionPacket(objectiveName)); // Is it necessary?
+                player.sendPacket(line.sidebarTeam.getDestructionPacket());
+            }
         }
         return result;
     }
