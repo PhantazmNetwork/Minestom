@@ -38,6 +38,8 @@ final class CommandParserImpl implements CommandParser {
             this.nodeResults.add(result);
             final Graph.Execution execution = result.node.execution();
             if (execution != null) {
+                conditions.add((sender, commandString) -> execution.test(sender));
+
                 // Create condition chain
                 final CommandCondition condition = execution.condition();
                 if (condition != null) conditions.add(condition);
