@@ -83,7 +83,7 @@ record GraphImpl(NodeImpl root) implements Graph {
                          CommandExecutor executor, CommandCondition condition) implements Execution {
         @Override
         public boolean test(CommandSender commandSender) {
-            return predicate.test(commandSender);
+            return predicate == null || predicate.test(commandSender);
         }
 
         static ExecutionImpl fromCommand(Command command) {
