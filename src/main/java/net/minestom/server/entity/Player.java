@@ -126,9 +126,9 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
     private GameMode gameMode;
     private DeathLocation deathLocation;
 
-    private long lastHurtTime;
+    private long defaultInvulnerabilityTicks = 8L;
 
-    private long minimumHurtDelay = 400L;
+    private long nextHurtTick = -1L;
 
     private final Object instanceAddSync = new Object();
     private volatile Runnable instanceAddCallback;
@@ -432,12 +432,11 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
 
     @Override
     public boolean damage(@NotNull Damage damage, boolean bypassArmor) {
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - lastHurtTime < minimumHurtDelay) {
+        if (MinecraftServer.currentTick() <= nextHurtTick) {
             return false;
         }
 
-        lastHurtTime = currentTime;
+        nextHurtTick = MinecraftServer.currentTick() + defaultInvulnerabilityTicks;
         return super.damage(damage, bypassArmor);
     }
 
@@ -694,8 +693,12 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         return setInstance(instance, this.instance != null ? getPosition() : getRespawnPoint());
     }
 
-    public void setMinimumHurtDelay(long minimumHurtDelay) {
-        this.minimumHurtDelay = minimumHurtDelay;
+    public void setDefaultInvulnerabilityTicks(long defaultInvulnerabilityTicks) {
+        this.defaultInvulnerabilityTicks = defaultInvulnerabilityTicks;
+    }
+
+    public void setNextHurtTick(long nextHurtTick) {
+        this.nextHurtTick = nextHurtTick;
     }
 
     /**
