@@ -261,6 +261,10 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
 
     }
 
+    public void interact(@NotNull Player player, @NotNull Point position) {
+
+    }
+
     /**
      * Called after an entity is added to an instance's {@link EntityTracker}, but before the entity spawns.
      */

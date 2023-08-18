@@ -24,6 +24,7 @@ public class UseEntityListener {
             EventDispatcher.call(new EntityAttackEvent(player, entity));
         } else if (type instanceof ClientInteractEntityPacket.InteractAt interactAt) {
             Point interactPosition = new Vec(interactAt.targetX(), interactAt.targetY(), interactAt.targetZ());
+            entity.interact(player, interactPosition);
             EventDispatcher.call(new PlayerEntityInteractEvent(player, entity, interactAt.hand(), interactPosition));
         }
     }
