@@ -17,6 +17,8 @@ import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.metadata.EntityMeta;
 import net.minestom.server.entity.metadata.LivingEntityMeta;
+import net.minestom.server.entity.state.CancellableState;
+import net.minestom.server.entity.state.Stateful;
 import net.minestom.server.event.EventDispatcher;
 import net.minestom.server.event.EventFilter;
 import net.minestom.server.event.EventHandler;
@@ -73,6 +75,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -83,7 +86,7 @@ import java.util.function.UnaryOperator;
  * To create your own entity you probably want to extends {@link LivingEntity} or {@link EntityCreature} instead.
  */
 public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, EventHandler<EntityEvent>, Taggable,
-        PermissionHandler, HoverEventSource<ShowEntity>, Sound.Emitter {
+        PermissionHandler, HoverEventSource<ShowEntity>, Sound.Emitter, Stateful<Entity> {
 
     private static final int VELOCITY_UPDATE_INTERVAL = 1;
 
@@ -177,6 +180,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     private long ticks;
 
     private final Acquirable<Entity> acquirable = Acquirable.of(this);
+    private final AtomicReference<CancellableState.Holder<Entity>> stateHolder;
 
     public Entity(@NotNull EntityType entityType, @NotNull UUID uuid) {
         this.id = generateId();
@@ -203,6 +207,8 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
             // Local nodes require a server process
             this.eventNode = null;
         }
+
+        this.stateHolder = new AtomicReference<>(null);
     }
 
     public Entity(@NotNull EntityType entityType) {
@@ -1750,6 +1756,13 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
                 .min(Comparator.comparingDouble(e -> e.getDistance(this.position)));
 
         return nearby.orElse(null);
+    }
+
+    @Override
+    public CancellableState.@NotNull Holder<Entity> stateHolder() {
+        return stateHolder.getAndUpdate(entityHolder -> {
+            return Objects.requireNonNullElseGet(entityHolder, () -> CancellableState.holder(Entity.this));
+        });
     }
 
     public enum Pose {
