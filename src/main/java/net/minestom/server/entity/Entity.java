@@ -1760,7 +1760,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
 
     @Override
     public CancellableState.@NotNull Holder<Entity> stateHolder() {
-        return stateHolder.getAndUpdate(entityHolder -> {
+        return stateHolder.updateAndGet(entityHolder -> {
             return Objects.requireNonNullElseGet(entityHolder, () -> CancellableState.holder(Entity.this));
         });
     }

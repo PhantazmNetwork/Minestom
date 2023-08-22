@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -23,6 +24,10 @@ public sealed interface CancellableState<T> permits CancellableState.Cancellable
         void registerState(@NotNull Key stage, @NotNull CancellableState<V> state);
 
         void removeState(@NotNull Key stage, @NotNull CancellableState<V> state);
+
+        void removeStates(@NotNull Key stage, @NotNull Collection<? extends CancellableState<V>> states);
+
+        void removeStage(@NotNull Key stage);
 
         @Nullable Key currentStage();
 
@@ -170,18 +175,16 @@ public sealed interface CancellableState<T> permits CancellableState.Cancellable
                 }
 
                 Set<CancellableState<V>> newStates = stateMap.get(newStage);
-                if (newStates == null) {
-                    throw new IllegalArgumentException("stage " + newStage + " does not exist");
-                }
-
                 if (currentStates != null) {
                     for (CancellableState<V> state : currentStates) {
                         state.end();
                     }
                 }
 
-                for (CancellableState<V> state : newStates) {
-                    state.start();
+                if (newStates != null) {
+                    for (CancellableState<V> state : newStates) {
+                        state.start();
+                    }
                 }
 
                 this.currentStage = newStage;
@@ -219,7 +222,7 @@ public sealed interface CancellableState<T> permits CancellableState.Cancellable
             synchronized (lock) {
                 Set<CancellableState<V>> states = stateMap.get(stage);
                 if (states == null) {
-                    throw new IllegalArgumentException("stage " + stage + " does not exist");
+                    return;
                 }
 
                 if (!states.remove(state)) {
@@ -232,6 +235,48 @@ public sealed interface CancellableState<T> permits CancellableState.Cancellable
 
                 if (states.isEmpty()) {
                     stateMap.remove(stage);
+                }
+            }
+        }
+
+        @Override
+        public void removeStates(@NotNull Key stage, @NotNull Collection<? extends CancellableState<V>> cancellableStates) {
+            Objects.requireNonNull(stage);
+            Objects.requireNonNull(cancellableStates);
+
+            synchronized (lock) {
+                Set<CancellableState<V>> states = stateMap.get(stage);
+                if (states == null || states.isEmpty()) {
+                    return;
+                }
+
+                for (CancellableState<V> state : cancellableStates) {
+                    if (state.self() != self) {
+                        throw new IllegalArgumentException("cannot remove state belonging to another object");
+                    }
+
+                    if (states.remove(state) && stage.equals(currentStage)) {
+                        state.end();
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void removeStage(@NotNull Key stage) {
+            Objects.requireNonNull(stage);
+
+            synchronized (lock) {
+                Set<CancellableState<V>> states = stateMap.remove(stage);
+                if (stage.equals(currentStage)) {
+                    if (states != null) {
+                        for (CancellableState<V> state : states) {
+                            state.end();
+                        }
+                    }
+
+                    this.currentStage = null;
+                    this.currentStates = null;
                 }
             }
         }
