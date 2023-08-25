@@ -483,6 +483,10 @@ public class LivingEntity extends Entity implements EquipmentHandler {
         return lastDamageSource;
     }
 
+    public void setLastDamageSource(@Nullable Damage damage) {
+        this.lastDamageSource = damage;
+    }
+
     /**
      * Gets the entity max health from {@link #getAttributeValue(Attribute)} {@link Attribute#MAX_HEALTH}.
      *
