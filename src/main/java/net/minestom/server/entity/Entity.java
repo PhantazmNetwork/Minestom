@@ -167,7 +167,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     protected EntityType entityType; // UNSAFE to change, modify at your own risk
 
     // Network synchronization, send the absolute position of the entity each X milliseconds
-    private static final Duration SYNCHRONIZATION_COOLDOWN = Duration.of(1, TimeUnit.MINUTE);
+    private static final Duration SYNCHRONIZATION_COOLDOWN = Duration.of(10, TimeUnit.SECOND);
     private Duration customSynchronizationCooldown;
     private long lastAbsoluteSynchronizationTime;
 
