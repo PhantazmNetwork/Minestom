@@ -115,7 +115,7 @@ final class CommandParserImpl implements CommandParser {
 
         // Look for a default executor, or give up if we got nowhere
         NodeResult lastNode = chain.nodeResults.peekLast();
-        if (lastNode.node.equals(parent)) return UnknownCommandResult.INSTANCE;
+        if (lastNode != null && lastNode.node.equals(parent)) return UnknownCommandResult.INSTANCE;
         if (chain.defaultExecutor != null) {
             return ValidCommand.defaultExecutor(input, chain);
         }
