@@ -7,7 +7,7 @@ adventure = "4.12.0"
 kotlin = "1.7.22"
 dependencyGetter = "v1.0.1"
 minestomData = "3e7a93f5e7"
-hephaistos = "2.5.3"
+hephaistos = "2.6.1"
 jetbrainsAnnotations = "23.0.0"
 
 # Terminal / Logging
