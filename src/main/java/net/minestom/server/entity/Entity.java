@@ -179,7 +179,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     // Tick related
     private long ticks;
 
-    private final Acquirable<Entity> acquirable = Acquirable.of(this);
+    private final Acquirable<? extends Entity> acquirable = Acquirable.of(this);
     private final AtomicReference<CancellableState.Holder<Entity>> stateHolder;
 
     public Entity(@NotNull EntityType entityType, @NotNull UUID uuid) {
@@ -1620,7 +1620,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     }
 
     @ApiStatus.Experimental
-    public @NotNull Acquirable<Entity> getAcquirable() {
+    public @NotNull Acquirable<? extends Entity> getAcquirable() {
         return acquirable;
     }
 

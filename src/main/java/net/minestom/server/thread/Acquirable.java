@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 @ApiStatus.Experimental
 public sealed interface Acquirable<T> permits AcquirableImpl {
     interface Source<T> {
-        @NotNull Acquirable<T> getAcquirable();
+        @NotNull Acquirable<? extends T> getAcquirable();
     }
 
 
