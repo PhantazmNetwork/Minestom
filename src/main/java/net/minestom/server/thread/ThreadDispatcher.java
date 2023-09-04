@@ -200,8 +200,8 @@ public final class ThreadDispatcher<P> {
         if (partitionEntry != null) {
             this.elements.put(tickable, partitionEntry);
             partitionEntry.elements.add(tickable);
-            if (tickable instanceof Entity entity) { // TODO support other types
-                ((AcquirableImpl<?>) entity.getAcquirable()).updateThread(partitionEntry.thread());
+            if (tickable instanceof Acquirable.Source<?> source) {
+                ((AcquirableImpl<?>) source.getAcquirable()).updateThread(partitionEntry.thread());
             }
         }
     }

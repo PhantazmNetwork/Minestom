@@ -86,7 +86,7 @@ import java.util.function.UnaryOperator;
  * To create your own entity you probably want to extends {@link LivingEntity} or {@link EntityCreature} instead.
  */
 public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, EventHandler<EntityEvent>, Taggable,
-        PermissionHandler, HoverEventSource<ShowEntity>, Sound.Emitter, Stateful<Entity> {
+        PermissionHandler, HoverEventSource<ShowEntity>, Sound.Emitter, Stateful<Entity>, Acquirable.Source<Entity> {
 
     private static final int VELOCITY_UPDATE_INTERVAL = 1;
 
@@ -1620,8 +1620,8 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     }
 
     @ApiStatus.Experimental
-    public <T extends Entity> @NotNull Acquirable<T> getAcquirable() {
-        return (Acquirable<T>) acquirable;
+    public @NotNull Acquirable<Entity> getAcquirable() {
+        return acquirable;
     }
 
     @Override

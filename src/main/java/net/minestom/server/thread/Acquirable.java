@@ -11,6 +11,10 @@ import java.util.stream.Stream;
 
 @ApiStatus.Experimental
 public sealed interface Acquirable<T> permits AcquirableImpl {
+    interface Source<T> {
+        @NotNull Acquirable<T> getAcquirable();
+    }
+
 
     /**
      * Gets all the {@link Entity entities} being ticked in the current thread.
