@@ -41,33 +41,10 @@ final class EntityTrackerImpl implements EntityTracker {
     @Override
     public <T extends Entity> void register(@NotNull Entity entity, @NotNull Point point,
                                             @NotNull Target<T> target, @Nullable Update<T> update) {
-        boolean locked = entity.synchronizeInstanceAdd();
-        if (locked) {
-            lock.lock();
-        }
+        var prevPoint = entityPositions.putIfAbsent(entity.getEntityId(), point);
+        if (prevPoint != null) return;
+        final long index = getChunkIndex(point);
 
-        try {
-            var prevPoint = entityPositions.putIfAbsent(entity.getEntityId(), point);
-            if (prevPoint != null) return;
-            final long index = getChunkIndex(point);
-
-            register0(entity, index);
-
-            if (update != null) {
-                update.referenceUpdate(point, this);
-                nearbyEntitiesByChunkRange(point, MinecraftServer.getEntityViewDistance(), target, newEntity -> {
-                    if (newEntity == entity) return;
-                    update.add(newEntity);
-                });
-            }
-        } finally {
-            if (locked) {
-                lock.unlock();
-            }
-        }
-    }
-
-    private void register0(Entity entity, long index) {
         for (TargetEntry<Entity> entry : entries) {
             if (entry.target.type().isInstance(entity)) {
                 entry.entities.add(entity);
@@ -75,7 +52,13 @@ final class EntityTrackerImpl implements EntityTracker {
             }
         }
 
-        entity.onInstanceAdd();
+        if (update != null) {
+            update.referenceUpdate(point, this);
+            nearbyEntitiesByChunkRange(point, MinecraftServer.getEntityViewDistance(), target, newEntity -> {
+                if (newEntity == entity) return;
+                update.add(newEntity);
+            });
+        }
     }
 
     @Override

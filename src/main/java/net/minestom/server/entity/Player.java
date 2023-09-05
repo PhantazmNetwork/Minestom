@@ -130,9 +130,6 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
 
     private long nextHurtTick = -1L;
 
-    private final Object instanceAddSync = new Object();
-    private volatile Runnable instanceAddCallback;
-
     /**
      * Keeps track of what chunks are sent to the client, this defines the center of the loaded area
      * in the range of {@link MinecraftServer#getChunkViewDistance()}
@@ -404,30 +401,6 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
 
         // Tick event
         EventDispatcher.call(new PlayerTickEvent(this));
-    }
-
-    @Override
-    public void onInstanceAdd() {
-        synchronized (instanceAddSync) {
-            Runnable runnable = this.instanceAddCallback;
-            if (runnable != null) {
-                runnable.run();
-                this.instanceAddCallback = null;
-            }
-        }
-    }
-
-    /**
-     * Sets a callback that will be executed when the player joins an new instance's {@link EntityTracker}, but before
-     * any spawn packets are sent (see {@link Entity#onInstanceAdd()}). The callback will be executed once and will need
-     * to be re-set for any subsequent instance transfers.
-     *
-     * @param runnable the callback to run
-     */
-    public void setInstanceAddCallback(@Nullable Runnable runnable) {
-        synchronized (instanceAddSync) {
-            this.instanceAddCallback = runnable;
-        }
     }
 
     @Override
