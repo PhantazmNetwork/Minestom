@@ -268,16 +268,18 @@ public sealed interface CancellableState<T> permits CancellableState.Cancellable
 
             synchronized (lock) {
                 Set<CancellableState<V>> states = stateMap.remove(stage);
-                if (stage.equals(currentStage)) {
-                    if (states != null) {
-                        for (CancellableState<V> state : states) {
-                            state.end();
-                        }
-                    }
-
-                    this.currentStage = null;
-                    this.currentStates = null;
+                if (!stage.equals(currentStage)) {
+                    return;
                 }
+
+                if (states != null) {
+                    for (CancellableState<V> state : states) {
+                        state.end();
+                    }
+                }
+
+                this.currentStage = null;
+                this.currentStates = null;
             }
         }
 
