@@ -289,16 +289,16 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         EventDispatcher.call(skinInitEvent);
         this.skin = skinInitEvent.getSkin();
 
-        // FIXME: when using Geyser, this line remove the skin of the client
-        ServerPacket packet = getAddPlayerToList();
-        spawnInstance.sendGroupedPacket(packet);
-        sendPacket(packet);
-        for (Player player : spawnInstance.getEntityTracker().entities(EntityTracker.Target.PLAYERS)) {
-            if (player == this) {
-                continue;
-            }
+        PlayerTablistEvent tablistEvent = new PlayerTablistEvent(this, true, null,
+                spawnInstance);
+        EventDispatcher.call(tablistEvent);
 
-            sendPacket(player.getAddPlayerToList());
+        if (!tablistEvent.tablistAddRecipients().isEmpty()) {
+            ServerPacket packet = getAddPlayerToList();
+            for (Player recipient : tablistEvent.tablistAddRecipients()) {
+                recipient.sendPacket(packet);
+                if (recipient != this) sendPacket(recipient.getAddPlayerToList());
+            }
         }
 
         //Teams
