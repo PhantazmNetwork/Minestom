@@ -6,27 +6,23 @@ import net.minestom.server.instance.Instance;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
 
-public class PlayerTablistEvent implements PlayerEvent {
+public class PlayerTablistShowEvent implements PlayerEvent {
     private final Player player;
     private final boolean firstSpawn;
 
-    private final Instance oldInstance;
     private final Instance newInstance;
 
-    private final List<Player> tablistRecipients;
+    private Iterable<Player> tablistRecipients;
+    private Predicate<? super Player> showPlayer = (ignored) -> true;
 
-    public PlayerTablistEvent(@NotNull Player player, boolean firstSpawn, @Nullable Instance oldInstance,
-                              @NotNull Instance newInstance) {
+    public PlayerTablistShowEvent(@NotNull Player player, boolean firstSpawn, @NotNull Instance newInstance) {
         this.player = Objects.requireNonNull(player);
         this.firstSpawn = firstSpawn;
 
-        this.oldInstance = oldInstance;
         this.newInstance = Objects.requireNonNull(newInstance);
-        this.tablistRecipients = new ArrayList<>();
     }
 
     @Override
@@ -38,15 +34,23 @@ public class PlayerTablistEvent implements PlayerEvent {
         return firstSpawn;
     }
 
-    public @Nullable Instance oldInstance() {
-        return oldInstance;
-    }
-
     public @NotNull Instance newInstance() {
         return newInstance;
     }
 
-    public @NotNull List<Player> tablistAddRecipients() {
+    public void setTablistParticipants(@Nullable Iterable<Player> players) {
+        this.tablistRecipients = players;
+    }
+
+    public @Nullable Iterable<Player> tablistParticipants() {
         return tablistRecipients;
+    }
+
+    public @NotNull Predicate<? super @NotNull Player> showPlayerPredicate() {
+        return showPlayer;
+    }
+
+    public void setShowPlayer(@NotNull Predicate<? super @NotNull Player> showPlayer) {
+        this.showPlayer = Objects.requireNonNull(showPlayer);
     }
 }

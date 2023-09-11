@@ -289,15 +289,17 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         EventDispatcher.call(skinInitEvent);
         this.skin = skinInitEvent.getSkin();
 
-        PlayerTablistEvent tablistEvent = new PlayerTablistEvent(this, true, null,
-                spawnInstance);
+        //Tablist
+        PlayerTablistShowEvent tablistEvent = new PlayerTablistShowEvent(this, true, spawnInstance);
         EventDispatcher.call(tablistEvent);
 
-        if (!tablistEvent.tablistAddRecipients().isEmpty()) {
-            ServerPacket packet = getAddPlayerToList();
-            for (Player recipient : tablistEvent.tablistAddRecipients()) {
+        ServerPacket packet = getAddPlayerToList();
+        Iterable<Player> recipients = tablistEvent.tablistParticipants();
+        if (recipients != null) {
+            for (Player recipient : recipients) {
                 recipient.sendPacket(packet);
-                if (recipient != this) sendPacket(recipient.getAddPlayerToList());
+                if (recipient != this && tablistEvent.showPlayerPredicate().test(recipient))
+                    sendPacket(recipient.getAddPlayerToList());
             }
         }
 
