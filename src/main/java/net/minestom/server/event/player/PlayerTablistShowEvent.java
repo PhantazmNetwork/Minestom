@@ -15,32 +15,18 @@ import java.util.function.BiPredicate;
  */
 public class PlayerTablistShowEvent implements PlayerEvent {
     private final Player player;
-    private final boolean firstSpawn;
-
-    private final Instance newInstance;
 
     private Iterable<Player> tablistRecipients;
     private BiPredicate<? super Player, ? super Player> showParticipantToJoiningPlayer = (ignored, ignored2) -> true;
     private BiPredicate<? super Player, ? super Player> showJoiningPlayerToParticipant = (ignored, ignored2) -> true;
 
-    public PlayerTablistShowEvent(@NotNull Player player, boolean firstSpawn, @NotNull Instance newInstance) {
+    public PlayerTablistShowEvent(@NotNull Player player) {
         this.player = Objects.requireNonNull(player);
-        this.firstSpawn = firstSpawn;
-
-        this.newInstance = Objects.requireNonNull(newInstance);
     }
 
     @Override
     public @NotNull Player getPlayer() {
         return player;
-    }
-
-    public boolean isFirstSpawn() {
-        return firstSpawn;
-    }
-
-    public @NotNull Instance newInstance() {
-        return newInstance;
     }
 
     public void setTablistParticipants(@Nullable Iterable<Player> players) {

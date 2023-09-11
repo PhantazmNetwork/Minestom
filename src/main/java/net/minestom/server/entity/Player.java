@@ -290,7 +290,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         this.skin = skinInitEvent.getSkin();
 
         //Tablist
-        PlayerTablistShowEvent tablistEvent = new PlayerTablistShowEvent(this, true, spawnInstance);
+        PlayerTablistShowEvent tablistEvent = new PlayerTablistShowEvent(this);
         EventDispatcher.call(tablistEvent);
 
         Iterable<Player> recipients = tablistEvent.tablistParticipants();
