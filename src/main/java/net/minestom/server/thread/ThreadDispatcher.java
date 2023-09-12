@@ -1,7 +1,6 @@
 package net.minestom.server.thread;
 
 import net.minestom.server.Tickable;
-import net.minestom.server.entity.Entity;
 import org.jctools.queues.MessagePassingQueue;
 import org.jctools.queues.MpscUnboundedArrayQueue;
 import org.jetbrains.annotations.ApiStatus;
@@ -181,7 +180,7 @@ public final class ThreadDispatcher<P> {
     }
 
     private void processRemovedElement(Tickable tickable) {
-        Partition partition = elements.get(tickable);
+        Partition partition = elements.remove(tickable);
         if (partition != null) {
             partition.elements.remove(tickable);
         }
