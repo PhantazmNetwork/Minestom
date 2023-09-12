@@ -568,8 +568,14 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
         final int chunkZ = position.chunkZ();
         // Clear all viewable chunks
         ChunkUtils.forChunksInRange(chunkX, chunkZ, MinecraftServer.getChunkViewDistance(), chunkRemover);
-        // Remove from the tab-list
-        PacketUtils.broadcastPacket(getRemovePlayerToList());
+
+        PlayerTablistRemoveEvent postDisconnectEvent = new PlayerTablistRemoveEvent(this);
+        EventDispatcher.call(postDisconnectEvent);
+
+        if (postDisconnectEvent.broadcastTablistRemoval()) {
+            // Remove from the tab-list
+            PacketUtils.broadcastPacket(getRemovePlayerToList());
+        }
 
         // Prevent the player from being stuck in loading screen, or just unable to interact with the server
         // This should be considered as a bug, since the player will ultimately time out anyway.
