@@ -202,6 +202,8 @@ public final class ThreadDispatcher<P> {
             if (tickable instanceof Acquirable.Source<?> source) {
                 ((AcquirableImpl<?>) source.getAcquirable()).updateThread(partitionEntry.thread());
             }
+        } else {
+            elements.remove(tickable);
         }
     }
 
