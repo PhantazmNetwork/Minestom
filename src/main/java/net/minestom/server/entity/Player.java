@@ -51,6 +51,7 @@ import net.minestom.server.network.ConnectionManager;
 import net.minestom.server.network.ConnectionState;
 import net.minestom.server.network.PlayerProvider;
 import net.minestom.server.network.packet.client.ClientPacket;
+import net.minestom.server.network.packet.server.CachedPacket;
 import net.minestom.server.network.packet.server.SendablePacket;
 import net.minestom.server.network.packet.server.ServerPacket;
 import net.minestom.server.network.packet.server.login.LoginDisconnectPacket;
@@ -295,7 +296,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
 
         Iterable<Player> recipients = tablistEvent.tablistParticipants();
 
-        ServerPacket packet = getAddPlayerToList();
+        CachedPacket packet = new CachedPacket(this::getAddPlayerToList);
         sendPacket(packet);
 
         if (recipients != null) {
@@ -307,7 +308,7 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
                     sendPacket(recipient.getAddPlayerToList());
             }
         } else {
-            PacketUtils.broadcastPacket(packet);
+            PacketUtils.broadcastPacket(packet.packet());
         }
 
         //Teams
