@@ -3,6 +3,7 @@ package net.minestom.server.network;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minestom.server.MinecraftServer;
+import net.minestom.server.entity.Entity;
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.EventDispatcher;
 import net.minestom.server.event.player.AsyncPlayerPreLoginEvent;
@@ -112,10 +113,11 @@ public final class ConnectionManager {
      * @return the first player who validate the UUID condition, null if none was found
      */
     public @Nullable Player getPlayer(@NotNull UUID uuid) {
-        for (Player player : getOnlinePlayers()) {
-            if (player.getUuid().equals(uuid))
-                return player;
+        Entity playerEntity = Entity.getEntity(uuid);
+        if (playerEntity instanceof Player player && player.isOnline()) {
+            return player;
         }
+
         return null;
     }
 
