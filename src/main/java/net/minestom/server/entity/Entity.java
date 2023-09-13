@@ -243,7 +243,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
      * @return the entity having the specified uuid, null if not found
      */
     public static @Nullable Entity getEntity(@NotNull UUID uuid) {
-        return Entity.ENTITY_BY_UUID.getOrDefault(uuid, null);
+        return Entity.ENTITY_BY_UUID.get(uuid);
     }
 
 
