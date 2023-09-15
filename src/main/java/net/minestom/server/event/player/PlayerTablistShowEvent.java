@@ -2,7 +2,6 @@ package net.minestom.server.event.player;
 
 import net.minestom.server.entity.Player;
 import net.minestom.server.event.trait.PlayerEvent;
-import net.minestom.server.instance.Instance;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,6 +28,11 @@ public class PlayerTablistShowEvent implements PlayerEvent {
         return player;
     }
 
+    /**
+     * Sets the tablist participants (see {@link PlayerTablistShowEvent#tablistParticipants()}).
+     *
+     * @param players the players participating in the tablist, or null
+     */
     public void setTablistParticipants(@Nullable Iterable<Player> players) {
         this.tablistRecipients = players;
     }
