@@ -1903,7 +1903,13 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
             return;
         }
 
-        instance.sendGroupedPacket(new PlayerInfoUpdatePacket(PlayerInfoUpdatePacket.Action.UPDATE_LATENCY, infoEntry()));
+        CachedPacket packet = new CachedPacket(() ->
+                new PlayerInfoUpdatePacket(PlayerInfoUpdatePacket.Action.UPDATE_LATENCY, infoEntry()));
+
+        for (Player player : instance.getPlayers()) {
+            if (player == this) continue;
+            if (viewEngine.viewableOption.predicate(player)) player.sendPacket(packet);
+        }
     }
 
     public void refreshOnGround(boolean onGround) {
