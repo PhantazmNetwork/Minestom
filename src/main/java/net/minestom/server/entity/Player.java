@@ -1006,7 +1006,14 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
             return;
         }
 
-        instance.sendGroupedPacket(new PlayerInfoUpdatePacket(PlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME, infoEntry()));
+        CachedPacket infoUpdate = new CachedPacket(() ->
+                new PlayerInfoUpdatePacket(PlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME, infoEntry()));
+
+        sendPacket(infoUpdate);
+        for (Player player : instance.getPlayers()) {
+            if (player == this) continue;
+            if (viewEngine.viewableOption.predicate(player)) player.sendPacket(infoUpdate);
+        }
     }
 
     /**
@@ -1376,7 +1383,14 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
             sendPacket(new ChangeGameStatePacket(ChangeGameStatePacket.Reason.CHANGE_GAMEMODE, gameMode.id()));
 
             if (instance != null) {
-                instance.sendGroupedPacket(new PlayerInfoUpdatePacket(PlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, infoEntry()));
+                CachedPacket infoUpdate = new CachedPacket(() ->
+                        new PlayerInfoUpdatePacket(PlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, infoEntry()));
+
+                sendPacket(infoUpdate);
+                for (Player player : instance.getPlayers()) {
+                    if (player == this) continue;
+                    if (viewEngine.viewableOption.predicate(player)) player.sendPacket(infoUpdate);
+                }
             }
         }
 
