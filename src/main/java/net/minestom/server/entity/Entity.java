@@ -58,7 +58,6 @@ import net.minestom.server.utils.async.AsyncUtils;
 import net.minestom.server.utils.block.BlockIterator;
 import net.minestom.server.utils.chunk.ChunkCache;
 import net.minestom.server.utils.chunk.ChunkUtils;
-import net.minestom.server.utils.player.PlayerUtils;
 import net.minestom.server.utils.time.Cooldown;
 import net.minestom.server.utils.time.TimeUnit;
 import net.minestom.server.utils.validate.Check;
@@ -539,7 +538,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         // Entity tick
         {
             // Cache the number of "gravity tick"
-            velocityTick();
+            movementTick();
 
             // handle block contacts
             touchTick();
@@ -561,116 +560,129 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         }
     }
 
-    private void velocityTick() {
-        this.gravityTickCount = onGround ? 0 : gravityTickCount + 1;
-        if (vehicle != null) return;
+    private float sidewaysSpeed;
+    private float upwardSpeed;
+    private float forwardSpeed;
 
-        final boolean noGravity = hasNoGravity();
-        final boolean hasVelocity = hasVelocity();
-        if (!hasVelocity && noGravity) {
+    private float movementSpeed;
+    private float flightSpeed;
+
+    private Block velocityAffectingBlock;
+
+    protected void movementTick() {
+        Vec velocity = getVelocity();
+        double vX = velocityEpsilon(velocity.x());
+        double vY = velocityEpsilon(velocity.y());
+        double vZ = velocityEpsilon(velocity.z());
+
+        this.velocity = new Vec(vX, vY, vZ);
+
+        this.sidewaysSpeed *= 0.98F;
+        this.forwardSpeed *= 0.98F;
+
+        travel(sidewaysSpeed, upwardSpeed, forwardSpeed);
+    }
+
+    protected @NotNull Block velocityAffectingBlock() {
+        if (velocityAffectingBlock != null) {
+            return velocityAffectingBlock;
+        }
+
+        Chunk chunk = currentChunk;
+        assert chunk != null;
+
+        Block block;
+        synchronized (chunk) {
+            Pos pos = getPosition();
+            block = chunk.getBlock(pos.blockX(), (int) Math.floor(pos.y() - 0.5 - Vec.EPSILON), pos.blockZ());
+        }
+
+        this.velocityAffectingBlock = block;
+        return block;
+    }
+
+    protected double movementSpeedWithFriction(double friction) {
+        return this.isOnGround() ? movementSpeed * (0.21600002F / (friction * friction * friction)) : flightSpeed;
+    }
+
+    protected void travel(double sideways, double upward, double forward) {
+        Block block = velocityAffectingBlock();
+        double friction = block.registry().friction();
+        if (this.isOnGround()) {
+            friction *= 0.91;
+        }
+
+        Vec velocity = applyMovementInput(sideways, upward, forward, friction);
+        double vertical = velocity.y();
+
+        if (!this.hasNoGravity()) {
+            vertical -= 0.08;
+        }
+
+        this.velocity = new Vec(velocity.x() * friction, vertical * 0.98F, velocity.z() * friction);
+        move(this.velocity);
+    }
+
+    protected void move(Vec movement) {
+        if (!this.hasPhysics) {
+            this.refreshPosition(getPosition().add(movement), true);
             return;
         }
-        final float tps = MinecraftServer.TICK_PER_SECOND;
-        final Pos positionBeforeMove = getPosition();
-        final Vec currentVelocity = getVelocity();
-        final boolean wasOnGround = this.onGround;
-        final Vec deltaPos = currentVelocity.div(tps);
 
-        final Pos newPosition;
-        final Vec newVelocity;
-        if (this.hasPhysics) {
-            final var physicsResult = CollisionUtils.handlePhysics(this, deltaPos, lastPhysicsResult);
-            this.lastPhysicsResult = physicsResult;
-            if (!PlayerUtils.isSocketClient(this))
-                this.onGround = physicsResult.isOnGround();
-
-            newPosition = physicsResult.newPosition();
-            newVelocity = physicsResult.newVelocity();
-        } else {
-            newVelocity = deltaPos;
-            newPosition = position.add(currentVelocity.div(20));
-        }
-
-        // World border collision
-        final Pos finalVelocityPosition = CollisionUtils.applyWorldBorder(instance, position, newPosition);
-        final boolean positionChanged = !finalVelocityPosition.samePoint(position);
-        final boolean isPlayer = this instanceof Player;
-        final boolean flying = isPlayer && ((Player) this).isFlying();
-        if (!positionChanged) {
-            if (flying) {
-                this.velocity = Vec.ZERO;
-                return;
-            } else if (hasVelocity || newVelocity.isZero()) {
-                this.velocity = noGravity ? Vec.ZERO : new Vec(
-                        0,
-                        -gravityAcceleration * tps * (1 - gravityDragPerTick),
-                        0
-                );
-                if (this.ticks % VELOCITY_UPDATE_INTERVAL == 0) {
-                    if (!isPlayer && !this.lastVelocityWasZero) {
-                        sendPacketToViewers(getVelocityPacket());
-                        this.lastVelocityWasZero = !hasVelocity;
-                    }
-                }
-                return;
-            }
-        }
-        final Chunk finalChunk = ChunkUtils.retrieve(instance, currentChunk, finalVelocityPosition);
-        if (!ChunkUtils.isLoaded(finalChunk)) {
-            // Entity shouldn't be updated when moving in an unloaded chunk
-            return;
-        }
-
-        if (positionChanged) {
-            if (entityType == EntityTypes.ITEM || entityType == EntityType.FALLING_BLOCK) {
-                // TODO find other exceptions
-                this.previousPosition = this.position;
-                this.position = finalVelocityPosition;
-                refreshCoordinate(finalVelocityPosition);
-            } else {
-                if (!PlayerUtils.isSocketClient(this))
-                    refreshPosition(finalVelocityPosition, true);
-            }
-        }
-
-        // Update velocity
-        if (hasVelocity || !newVelocity.isZero()) {
-            updateVelocity(wasOnGround, flying, positionBeforeMove, newVelocity);
-        }
-        // Verify if velocity packet has to be sent
-        if (this.ticks % VELOCITY_UPDATE_INTERVAL == 0) {
-            if (!isPlayer && (hasVelocity || !lastVelocityWasZero)) {
-                sendPacketToViewers(getVelocityPacket());
-                this.lastVelocityWasZero = !hasVelocity;
-            }
+        movement = adjustForCollisions(movement);
+        double movementLengthSquared = movement.lengthSquared();
+        if (movementLengthSquared > Vec.EPSILON) {
+            this.position = this.position.add(movement);
         }
     }
 
-    protected void updateVelocity(boolean wasOnGround, boolean flying, Pos positionBeforeMove, Vec newVelocity) {
-        EntitySpawnType type = entityType.registry().spawnType();
-        final double airDrag = type == EntitySpawnType.LIVING || type == EntitySpawnType.PLAYER ? 0.91 : 0.98;
-        final double drag;
-        if (wasOnGround) {
-            final Chunk chunk = ChunkUtils.retrieve(instance, currentChunk, position);
-            synchronized (chunk) {
-                drag = chunk.getBlock(positionBeforeMove.sub(0, 0.5000001, 0)).registry().friction() * airDrag;
+    protected Vec adjustForCollisions(Vec movement) {
+        return Vec.ONE;
+    }
+
+    protected Vec updateVelocity(double speed, double sideways, double upward, double forward) {
+        double lengthSquared = sideways * sideways + upward * upward + forward * forward;
+
+        double vX = sideways;
+        double vY = upward;
+        double vZ = forward;
+        if (lengthSquared < Vec.EPSILON) {
+            vX = 0;
+            vY = 0;
+            vZ = 0;
+        } else {
+            if (lengthSquared > 1) {
+                double length = Math.sqrt(lengthSquared);
+                vX = sideways / length;
+                vY = upward / length;
+                vZ = upward / length;
             }
-        } else drag = airDrag;
 
-        double gravity = flying ? 0 : gravityAcceleration;
-        double gravityDrag = flying ? 0.6 : (1 - gravityDragPerTick);
+            vX *= speed;
+            vY *= speed;
+            vZ *= speed;
 
-        this.velocity = newVelocity
-                // Apply gravity and drag
-                .apply((x, y, z) -> new Vec(
-                        x * drag,
-                        !hasNoGravity() ? (y - gravity) * gravityDrag : y,
-                        z * drag
-                ))
-                // Convert from block/tick to block/sec
-                .mul(MinecraftServer.TICK_PER_SECOND)
-                // Prevent infinitely decreasing velocity
-                .apply(Vec.Operator.EPSILON);
+            float a = (float) Math.sin(this.getPosition().yaw() * Math.PI / 180);
+            float b = (float) Math.cos(this.getPosition().yaw() * Math.PI / 180);
+
+            double x = vX * b - vZ * a;
+            double y = vY;
+            double z = vZ * b + vX * a;
+
+            vX = x;
+            vY = y;
+            vZ = z;
+        }
+
+        return this.getVelocity().add(vX, vY, vZ);
+    }
+
+    protected @NotNull Vec applyMovementInput(double sideways, double upward, double forward, double friction) {
+        return updateVelocity(this.movementSpeedWithFriction(friction), sideways, upward, forward);
+    }
+
+    private static double velocityEpsilon(double v) {
+        return Math.abs(v) < 0.003 ? 0.0 : v;
     }
 
     private void touchTick() {
