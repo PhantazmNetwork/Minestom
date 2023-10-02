@@ -3,6 +3,7 @@ package net.minestom.server.entity;
 import net.minestom.server.coordinate.Vec;
 
 import java.util.Comparator;
+import java.util.UUID;
 
 public class ExperienceOrb extends Entity {
 
@@ -10,11 +11,17 @@ public class ExperienceOrb extends Entity {
     private Player target;
     private long lastTargetUpdateTick;
 
-    public ExperienceOrb(short experienceCount) {
-        super(EntityType.EXPERIENCE_ORB);
+    protected ExperienceOrb(short experienceCount, boolean register) {
+        super(EntityType.EXPERIENCE_ORB, UUID.randomUUID(), false);
         setBoundingBox(0.5f, 0.5f, 0.5f);
         //todo vanilla sets random velocity here?
         this.experienceCount = experienceCount;
+
+        if (register) super.register();
+    }
+
+    public ExperienceOrb(short experienceCount) {
+        this(experienceCount, true);
     }
 
     @Override

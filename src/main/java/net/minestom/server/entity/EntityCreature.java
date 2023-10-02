@@ -25,12 +25,18 @@ public class EntityCreature extends LivingEntity implements EntityAI {
 
     private Entity target;
 
+    protected EntityCreature(@NotNull EntityType entityType, @NotNull UUID uuid, boolean register) {
+        super(entityType, uuid, false);
+        heal();
+
+        if (register) super.register();
+    }
+
     /**
      * Constructor which allows to specify an UUID. Only use if you know what you are doing!
      */
     public EntityCreature(@NotNull EntityType entityType, @NotNull UUID uuid) {
-        super(entityType, uuid);
-        heal();
+        this(entityType, uuid, true);
     }
 
     public EntityCreature(@NotNull EntityType entityType) {

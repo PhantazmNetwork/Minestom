@@ -210,8 +210,9 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
     private Identity identity;
     private final Pointers pointers;
 
-    public Player(@NotNull UUID uuid, @NotNull String username, @NotNull PlayerConnection playerConnection) {
-        super(EntityType.PLAYER, uuid);
+    protected Player(@NotNull UUID uuid, @NotNull String username, @NotNull PlayerConnection playerConnection,
+                     boolean register) {
+        super(EntityType.PLAYER, uuid, false);
         this.username = username;
         this.usernameComponent = Component.text(username);
         this.playerConnection = playerConnection;
@@ -240,6 +241,12 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
                 .withDynamic(Identity.NAME, this::getUsername)
                 .withDynamic(Identity.DISPLAY_NAME, this::getDisplayName)
                 .build();
+
+        if (register) super.register();
+    }
+
+    public Player(@NotNull UUID uuid, @NotNull String username, @NotNull PlayerConnection playerConnection) {
+        this(uuid, username, playerConnection, true);
     }
 
     /**

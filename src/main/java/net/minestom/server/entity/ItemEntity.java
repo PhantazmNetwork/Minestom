@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.time.temporal.TemporalUnit;
+import java.util.UUID;
 
 /**
  * Represents an item on the ground.
@@ -38,10 +39,16 @@ public class ItemEntity extends Entity {
     private long spawnTime;
     private long pickupDelay;
 
-    public ItemEntity(@NotNull ItemStack itemStack) {
-        super(EntityType.ITEM);
+    protected ItemEntity(@NotNull ItemStack itemStack, boolean register) {
+        super(EntityType.ITEM, UUID.randomUUID(), false);
         setItemStack(itemStack);
         setBoundingBox(0.25f, 0.25f, 0.25f);
+
+        if (register) super.register();
+    }
+
+    public ItemEntity(@NotNull ItemStack itemStack) {
+        this(itemStack, true);
     }
 
     /**

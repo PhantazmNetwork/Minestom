@@ -43,8 +43,8 @@ public class FakePlayer extends Player {
      */
     protected FakePlayer(@NotNull UUID uuid, @NotNull String username,
                          @NotNull FakePlayerOption option,
-                         @Nullable Consumer<FakePlayer> spawnCallback) {
-        super(uuid, username, new FakePlayerConnection());
+                         @Nullable Consumer<FakePlayer> spawnCallback, boolean register) {
+        super(uuid, username, new FakePlayerConnection(), false);
 
         this.option = option;
 
@@ -62,6 +62,14 @@ public class FakePlayer extends Player {
             MinecraftServer.getGlobalEventHandler().addListener(spawnListener);
         }
         CONNECTION_MANAGER.startPlayState(this, option.isRegistered());
+
+        if (register) super.register();
+    }
+
+    protected FakePlayer(@NotNull UUID uuid, @NotNull String username,
+                         @NotNull FakePlayerOption option,
+                         @Nullable Consumer<FakePlayer> spawnCallback) {
+        this(uuid, username, option, spawnCallback, true);
     }
 
     /**

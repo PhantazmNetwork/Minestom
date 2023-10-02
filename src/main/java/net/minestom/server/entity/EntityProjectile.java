@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -30,10 +31,16 @@ public class EntityProjectile extends Entity {
 
     private final Entity shooter;
 
-    public EntityProjectile(@Nullable Entity shooter, @NotNull EntityType entityType) {
-        super(entityType);
+    protected EntityProjectile(@Nullable Entity shooter, @NotNull EntityType entityType, boolean register) {
+        super(entityType, UUID.randomUUID(), false);
         this.shooter = shooter;
         setup();
+
+        if (register) super.register();
+    }
+
+    public EntityProjectile(@Nullable Entity shooter, @NotNull EntityType entityType) {
+        this(shooter, entityType, true);
     }
 
     private void setup() {

@@ -182,7 +182,7 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
     private final Acquirable<? extends Entity> acquirable = Acquirable.of(this);
     private final AtomicReference<CancellableState.Holder<Entity>> stateHolder;
 
-    public Entity(@NotNull EntityType entityType, @NotNull UUID uuid) {
+    protected Entity(@NotNull EntityType entityType, @NotNull UUID uuid, boolean register) {
         this.id = generateId();
         this.entityType = entityType;
         this.uuid = uuid;
@@ -193,9 +193,6 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         this.entityMeta = EntityTypeImpl.createMeta(entityType, this, this.metadata);
 
         setBoundingBox(entityType.registry().boundingBox());
-
-        Entity.ENTITY_BY_ID.put(id, this);
-        Entity.ENTITY_BY_UUID.put(uuid, this);
 
         this.gravityAcceleration = entityType.registry().acceleration();
         this.gravityDragPerTick = entityType.registry().drag();
@@ -209,10 +206,21 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
         }
 
         this.stateHolder = new AtomicReference<>(null);
+
+        if (register) register();
+    }
+
+    public Entity(@NotNull EntityType entityType, @NotNull UUID uuid) {
+        this(entityType, uuid, true);
     }
 
     public Entity(@NotNull EntityType entityType) {
         this(entityType, UUID.randomUUID());
+    }
+
+    protected void register() {
+        Entity.ENTITY_BY_ID.put(id, this);
+        Entity.ENTITY_BY_UUID.put(uuid, this);
     }
 
     /**

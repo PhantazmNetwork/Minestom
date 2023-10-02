@@ -85,12 +85,18 @@ public class LivingEntity extends Entity implements EquipmentHandler {
     private ItemStack leggings;
     private ItemStack boots;
 
+    protected LivingEntity(@NotNull EntityType entityType, @NotNull UUID uuid, boolean register) {
+        super(entityType, uuid, false);
+        initEquipments();
+
+        if (register) super.register();
+    }
+
     /**
      * Constructor which allows to specify an UUID. Only use if you know what you are doing!
      */
     public LivingEntity(@NotNull EntityType entityType, @NotNull UUID uuid) {
-        super(entityType, uuid);
-        initEquipments();
+        this(entityType, uuid, true);
     }
 
     public LivingEntity(@NotNull EntityType entityType) {
