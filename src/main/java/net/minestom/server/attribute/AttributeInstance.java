@@ -114,20 +114,26 @@ public final class AttributeInstance {
         final Collection<AttributeModifier> modifiers = getModifiers();
         float base = getBaseValue();
 
-        for (var modifier : modifiers.stream().filter(mod -> mod.getOperation() == AttributeOperation.ADDITION).toArray(AttributeModifier[]::new)) {
-            base += modifier.getAmount();
+        for (AttributeModifier modifier : modifiers) {
+            if (modifier.getOperation() == AttributeOperation.ADDITION) {
+                base += (float) modifier.getAmount();
+            }
         }
 
         float result = base;
-
-        for (var modifier : modifiers.stream().filter(mod -> mod.getOperation() == AttributeOperation.MULTIPLY_BASE).toArray(AttributeModifier[]::new)) {
-            result += (base * modifier.getAmount());
-        }
-        for (var modifier : modifiers.stream().filter(mod -> mod.getOperation() == AttributeOperation.MULTIPLY_TOTAL).toArray(AttributeModifier[]::new)) {
-            result *= (1.0f + modifier.getAmount());
+        for (AttributeModifier modifier : modifiers) {
+            if (modifier.getOperation() == AttributeOperation.MULTIPLY_BASE) {
+                result += (float) (base * modifier.getAmount());
+            }
         }
 
-        this.cachedValue = Math.min(result, getAttribute().maxValue());
+        for (AttributeModifier modifier : modifiers) {
+            if (modifier.getOperation() == AttributeOperation.MULTIPLY_TOTAL) {
+                result *= (float) (1.0f + modifier.getAmount());
+            }
+        }
+
+        this.cachedValue = result;
 
         // Signal entity
         if (propertyChangeListener != null) {
