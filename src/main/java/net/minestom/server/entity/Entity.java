@@ -279,6 +279,10 @@ public class Entity implements Viewable, Tickable, Schedulable, Snapshotable, Ev
 
     }
 
+    public void attacked(@NotNull Player player) {
+
+    }
+
     /**
      * Called when a new instance is set.
      */

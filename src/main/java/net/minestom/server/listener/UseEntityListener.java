@@ -21,6 +21,7 @@ public class UseEntityListener {
         if (type instanceof ClientInteractEntityPacket.Attack) {
             if (entity instanceof LivingEntity && ((LivingEntity) entity).isDead()) // Can't attack dead entities
                 return;
+            entity.attacked(player);
             EventDispatcher.call(new EntityAttackEvent(player, entity));
         } else if (type instanceof ClientInteractEntityPacket.InteractAt interactAt) {
             Point interactPosition = new Vec(interactAt.targetX(), interactAt.targetY(), interactAt.targetZ());
