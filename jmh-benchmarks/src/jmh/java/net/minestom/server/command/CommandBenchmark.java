@@ -27,32 +27,37 @@ public class CommandBenchmark {
     @Setup
     public void setup() {
         var graph = Graph.merge(Set.of(
-                new Command("tp", "teleport") {{
-                    addSyntax((sender, context) -> {}, Potion("pos"));
-                    addSyntax((sender, context) -> {}, Entity("entity"), Potion("pos"));
-                }},
                 new Command("setblock", "set") {{
-                    addSyntax((sender, context) -> {}, RelativeBlockPosition("pos"), BlockState("block"));
+                    addSyntax((sender, context) -> {
+                    }, RelativeBlockPosition("pos"), BlockState("block"));
                 }},
                 new Command("foo") {{
                     setCondition((sender, commandString) -> true);
                     addSubcommand(new Command("bar") {{
-                        addConditionalSyntax((sender, commandString) -> true, (sender, context) -> {});
+                        addConditionalSyntax((sender, commandString) -> true, (sender, context) -> {
+                        });
                     }});
-                    addSubcommand(new Command("baz"){{
-                        addSyntax((sender, context) -> {}, Word("A").from("a", "b", "c"), Word("B").from("a", "b", "c"));
+                    addSubcommand(new Command("baz") {{
+                        addSyntax((sender, context) -> {
+                        }, Word("A").from("a", "b", "c"), Word("B").from("a", "b", "c"));
                     }});
                 }},
                 new Command("def") {{
-                    addSyntax((sender, context) -> {}, Literal("a"), Literal("b"), Literal("c"), Literal("d"),
+                    addSyntax((sender, context) -> {
+                            }, Literal("a"), Literal("b"), Literal("c"), Literal("d"),
                             Literal("e"), Literal("f"));
-                    setDefaultExecutor((sender, context) -> {});
+                    setDefaultExecutor((sender, context) -> {
+                    });
                 }},
                 new Command("parse") {{
-                    addSyntax((sender, context) -> {}, Literal("int"), Integer("val"));
-                    addSyntax((sender, context) -> {}, Literal("double"), Double("val"));
-                    addSyntax((sender, context) -> {}, Literal("float"), Float("val"));
-                    addSyntax((sender, context) -> {}, Literal("long"), Long("val"));
+                    addSyntax((sender, context) -> {
+                    }, Literal("int"), Integer("val"));
+                    addSyntax((sender, context) -> {
+                    }, Literal("double"), Double("val"));
+                    addSyntax((sender, context) -> {
+                    }, Literal("float"), Float("val"));
+                    addSyntax((sender, context) -> {
+                    }, Literal("long"), Long("val"));
                 }}
         ));
         final CommandParser commandParser = CommandParser.parser();
