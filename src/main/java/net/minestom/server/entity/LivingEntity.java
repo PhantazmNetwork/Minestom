@@ -193,8 +193,9 @@ public class LivingEntity extends Entity implements EquipmentHandler {
 
     @Override
     public void update(long time) {
-        if (isOnFire() && time > fireExtinguishTime) {
+        if (isOnFire() && time > fireExtinguishTime && fireExtinguishTime != 0) {
             setOnFire(false);
+            fireExtinguishTime = 0;
         }
 
         // Items picking
