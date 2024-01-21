@@ -17,5 +17,4 @@ pluginManagement {
 
 rootProject.name = "Minestom"
 include("code-generators")
-include("jmh-benchmarks")
 include("testing")
