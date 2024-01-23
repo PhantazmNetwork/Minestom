@@ -19,12 +19,15 @@ import java.util.*;
  * Contains {@link Biome#PLAINS} by default but can be removed.
  */
 public final class BiomeManager {
-    private volatile Maps maps = new Maps(new Object2IntOpenHashMap<>(), new Int2ObjectOpenHashMap<>());
+    private volatile Maps maps = new Maps(new HashMap<>(), new Int2ObjectOpenHashMap<>(),
+            new Object2IntOpenHashMap<>());
     private final Object lock = new Object();
 
-    private record Maps(Object2IntMap<NamespaceID> nameToId, Int2ObjectMap<Biome> idToBiome) {
+    private record Maps(Map<NamespaceID, Biome> nameToBiome, Int2ObjectMap<Biome> idToBiome,
+                        Object2IntMap<Biome> biomeToId) {
         private Maps copy() {
-            return new Maps(new Object2IntOpenHashMap<>(nameToId), new Int2ObjectOpenHashMap<>(idToBiome));
+            return new Maps(new HashMap<>(nameToBiome), new Int2ObjectOpenHashMap<>(idToBiome),
+                    new Object2IntOpenHashMap<>(biomeToId));
         }
     }
 
@@ -42,8 +45,9 @@ public final class BiomeManager {
             Maps maps = this.maps;
             Maps newMaps = maps.copy();
 
-            newMaps.nameToId.put(biome.name(), id);
+            newMaps.nameToBiome.put(biome.name(), biome);
             newMaps.idToBiome.put(id, biome);
+            newMaps.biomeToId.put(biome, id);
 
             this.maps = newMaps;
         }
@@ -60,8 +64,9 @@ public final class BiomeManager {
             Maps newMaps = maps.copy();
 
             for (IntObjectPair<Biome> pair : biomes) {
-                newMaps.nameToId.put(pair.right().name(), pair.firstInt());
+                newMaps.nameToBiome.put(pair.right().name(), pair.right());
                 newMaps.idToBiome.put(pair.firstInt(), pair.right());
+                newMaps.biomeToId.put(pair.right(), pair.firstInt());
             }
 
             this.maps = newMaps;
@@ -78,7 +83,8 @@ public final class BiomeManager {
             Maps maps = this.maps;
             Maps newMaps = maps.copy();
 
-            int id = newMaps.nameToId.removeInt(biome.name());
+            int id = newMaps.biomeToId.removeInt(biome);
+            newMaps.nameToBiome.remove(biome.name());
             newMaps.idToBiome.remove(id);
 
             this.maps = newMaps;
@@ -105,16 +111,23 @@ public final class BiomeManager {
     }
 
     public Biome getByName(NamespaceID namespaceID) {
-        Maps maps = this.maps;
-        return maps.idToBiome.get(maps.nameToId.getInt(namespaceID));
+        return this.maps.nameToBiome.get(namespaceID);
     }
 
     public int getId(NamespaceID namespaceID) {
-        return maps.nameToId.getInt(namespaceID);
+        Maps maps = this.maps;
+        Biome biome = maps.nameToBiome.get(namespaceID);
+        return maps.biomeToId.getInt(biome);
+    }
+
+    public int getIdOrDefault(NamespaceID namespaceID, int id) {
+        Maps maps = this.maps;
+        Biome biome = maps.nameToBiome.get(namespaceID);
+        return biome == null ? id : maps.biomeToId.getInt(biome);
     }
 
     public int getId(Biome biome) {
-        return getId(biome.name());
+        return this.maps.biomeToId.getInt(biome);
     }
 
     public NBTCompound toNBT() {

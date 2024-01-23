@@ -3,6 +3,8 @@ package net.minestom.server.instance;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntIntImmutablePair;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.instance.block.Block;
 import net.minestom.server.instance.block.BlockHandler;
@@ -33,6 +35,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.ToIntFunction;
 
 public class AnvilLoader implements IChunkLoader {
     private final static Logger LOGGER = LoggerFactory.getLogger(AnvilLoader.class);
@@ -164,7 +167,12 @@ public class AnvilLoader implements IChunkLoader {
     }
 
     private void loadSections(Chunk chunk, ChunkReader chunkReader) {
-        final HashMap<String, Biome> biomeCache = new HashMap<>();
+        final Object2IntMap<String> biomeCache = new Object2IntOpenHashMap<>();
+        // Biomes
+        BiomeManager biomeManager = MinecraftServer.getBiomeManager();
+
+        int defaultBiome = biomeManager.getId(BIOME_ID);
+
         for (NBTCompound sectionNBT : chunkReader.getSections()) {
             ChunkSectionReader sectionReader = new ChunkSectionReader(chunkReader.getMinecraftVersion(), sectionNBT);
 
@@ -181,23 +189,25 @@ public class AnvilLoader implements IChunkLoader {
                 section.setBlockLight(sectionReader.getBlockLight().copyArray());
             }
 
-            // Biomes
-            BiomeManager biomeManager = MinecraftServer.getBiomeManager();
             if (chunkReader.getGenerationStatus().compareTo(ChunkColumn.GenerationStatus.Biomes) > 0) {
                 SectionBiomeInformation sectionBiomeInformation = chunkReader.readSectionBiomes(sectionReader);
 
                 if (sectionBiomeInformation != null && sectionBiomeInformation.hasBiomeInformation()) {
                     if (sectionBiomeInformation.isFilledWithSingleBiome()) {
+                        int sectionBiome = biomeCache.computeIfAbsent(sectionBiomeInformation.getBaseBiome(),
+                                (ToIntFunction<String>) value -> {
+                                    assert value != null;
+                                    return biomeManager.getIdOrDefault(NamespaceID.from(value), defaultBiome);
+                                });
+
                         for (int y = 0; y < Chunk.CHUNK_SECTION_SIZE; y++) {
                             for (int z = 0; z < Chunk.CHUNK_SIZE_Z; z++) {
                                 for (int x = 0; x < Chunk.CHUNK_SIZE_X; x++) {
                                     int finalX = chunk.chunkX * Chunk.CHUNK_SIZE_X + x;
                                     int finalZ = chunk.chunkZ * Chunk.CHUNK_SIZE_Z + z;
                                     int finalY = sectionY * Chunk.CHUNK_SECTION_SIZE + y;
-                                    String biomeName = sectionBiomeInformation.getBaseBiome();
-                                    Biome biome = biomeCache.computeIfAbsent(biomeName, n ->
-                                            Objects.requireNonNullElse(biomeManager.getByName(NamespaceID.from(n)), biomeManager.getByName(BIOME_ID)));
-                                    chunk.setBiome(finalX, finalY, finalZ, biome);
+
+                                    chunk.setBiomeById(finalX, finalY, finalZ, sectionBiome);
                                 }
                             }
                         }
@@ -210,10 +220,13 @@ public class AnvilLoader implements IChunkLoader {
                                     int finalY = sectionY * Chunk.CHUNK_SECTION_SIZE + y;
 
                                     int index = x / 4 + (z / 4) * 4 + (y / 4) * 16;
+
                                     String biomeName = sectionBiomeInformation.getBiomes()[index];
-                                    Biome biome = biomeCache.computeIfAbsent(biomeName, n ->
-                                            Objects.requireNonNullElse(biomeManager.getByName(NamespaceID.from(n)), biomeManager.getByName(BIOME_ID)));
-                                    chunk.setBiome(finalX, finalY, finalZ, biome);
+                                    int biome = biomeCache.computeIfAbsent(biomeName, (ToIntFunction<String>) value -> {
+                                        return biomeManager.getIdOrDefault(NamespaceID.from(value), defaultBiome);
+                                    });
+
+                                    chunk.setBiomeById(finalX, finalY, finalZ, biome);
                                 }
                             }
                         }

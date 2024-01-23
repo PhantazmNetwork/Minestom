@@ -85,6 +85,17 @@ public class DynamicChunk extends Chunk {
     }
 
     @Override
+    public void setBiomeById(int x, int y, int z, int biomeId) {
+        assertLock();
+        this.chunkCache.invalidate();
+        Section section = getSectionAt(y);
+        section.biomePalette().set(
+                toSectionRelativeCoordinate(x) / 4,
+                toSectionRelativeCoordinate(y) / 4,
+                toSectionRelativeCoordinate(z) / 4, biomeId);
+    }
+
+    @Override
     public void setBiome(int x, int y, int z, @NotNull Biome biome) {
         assertLock();
         this.chunkCache.invalidate();

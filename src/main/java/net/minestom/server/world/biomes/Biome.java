@@ -1,5 +1,6 @@
 package net.minestom.server.world.biomes;
 
+import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.utils.NamespaceID;
 import net.minestom.server.utils.validate.Check;
@@ -144,6 +145,10 @@ public final class Biome {
 
     public interface Setter {
         void setBiome(int x, int y, int z, @NotNull Biome biome);
+
+        default void setBiomeById(int x, int y, int z, int biomeId) {
+            setBiome(x, y, z, MinecraftServer.getBiomeManager().getById(biomeId));
+        }
 
         default void setBiome(@NotNull Point blockPosition, @NotNull Biome biome) {
             setBiome(blockPosition.blockX(), blockPosition.blockY(), blockPosition.blockZ(), biome);
