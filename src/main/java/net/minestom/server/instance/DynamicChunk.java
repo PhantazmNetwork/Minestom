@@ -1,6 +1,6 @@
 package net.minestom.server.instance;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.*;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.coordinate.Point;
 import net.minestom.server.entity.Entity;
@@ -43,8 +43,8 @@ public class DynamicChunk extends Chunk {
     private Section[] sections;
 
     // Key = ChunkUtils#getBlockIndex
-    protected final Int2ObjectOpenHashMap<Block> entries = new Int2ObjectOpenHashMap<>(0);
-    protected final Int2ObjectOpenHashMap<Block> tickableMap = new Int2ObjectOpenHashMap<>(0);
+    protected final Int2ObjectOpenHashMap<Block> entries;
+    protected final Int2ObjectOpenHashMap<Block> tickableMap;
 
     private long lastChange;
     final CachedPacket chunkCache = new CachedPacket(this::createChunkPacket);
@@ -55,11 +55,37 @@ public class DynamicChunk extends Chunk {
         var sectionsTemp = new Section[maxSection - minSection];
         Arrays.setAll(sectionsTemp, value -> new Section());
         this.sections = sectionsTemp;
+
+        this.entries = new Int2ObjectOpenHashMap<>(0);
+        this.tickableMap = new Int2ObjectOpenHashMap<>(0);
     }
 
-    public DynamicChunk(@NotNull Instance instance, int chunkX, int chunkZ, @NotNull Section[] sections) {
+    public DynamicChunk(@NotNull Instance instance, int chunkX, int chunkZ, @NotNull Section[] sections,
+                        @NotNull Int2ObjectMap<Block> blockEntries) {
         super(instance, chunkX, chunkZ, true);
         this.sections = sections;
+
+        Int2ObjectOpenHashMap<Block> newEntries = new Int2ObjectOpenHashMap<>(blockEntries.size());
+        Int2ObjectOpenHashMap<Block> tickableMap = new Int2ObjectOpenHashMap<>();
+        for (Int2ObjectMap.Entry<Block> blockEntry : blockEntries.int2ObjectEntrySet()) {
+            int key = blockEntry.getIntKey();
+            Block block = blockEntry.getValue();
+            if (block == null) {
+                continue;
+            }
+
+            BlockHandler handler = block.handler();
+            if (handler != null || block.hasNbt() || block.registry().isBlockEntity()) {
+                newEntries.put(key, block);
+            }
+
+            if (handler != null && handler.isTickable()) {
+                tickableMap.put(key, block);
+            }
+        }
+
+        this.entries = newEntries;
+        this.tickableMap = tickableMap;
     }
 
     @Override
@@ -87,6 +113,11 @@ public class DynamicChunk extends Chunk {
         } else {
             this.tickableMap.remove(index);
         }
+    }
+
+    @Override
+    public @NotNull Int2ObjectMap<Block> getEntries() {
+        return Int2ObjectMaps.unmodifiable(entries);
     }
 
     @Override

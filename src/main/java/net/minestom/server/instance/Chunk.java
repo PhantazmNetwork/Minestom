@@ -1,5 +1,6 @@
 package net.minestom.server.instance;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minestom.server.Tickable;
 import net.minestom.server.Viewable;
 import net.minestom.server.coordinate.Point;
@@ -82,6 +83,8 @@ public abstract class Chunk implements Block.Getter, Block.Setter, Biome.Getter,
      */
     @Override
     public abstract void setBlock(int x, int y, int z, @NotNull Block block);
+
+    public abstract @NotNull Int2ObjectMap<Block> getEntries();
 
     public abstract @NotNull List<Section> getSections();
 
