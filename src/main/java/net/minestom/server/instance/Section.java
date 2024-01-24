@@ -4,9 +4,15 @@ import net.minestom.server.instance.palette.Palette;
 import net.minestom.server.network.NetworkBuffer;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 import static net.minestom.server.network.NetworkBuffer.SHORT;
 
-public final class Section implements NetworkBuffer.Writer {
+public final class Section implements NetworkBuffer.Writer, Serializable {
+    @Serial
+    private static final long serialVersionUID = -7101912117142347207L;
+
     private Palette blockPalette;
     private Palette biomePalette;
     private byte[] skyLight;

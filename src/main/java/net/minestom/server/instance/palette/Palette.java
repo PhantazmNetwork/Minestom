@@ -3,6 +3,7 @@ package net.minestom.server.instance.palette;
 import net.minestom.server.network.NetworkBuffer;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serializable;
 import java.util.function.IntUnaryOperator;
 
 /**
@@ -10,7 +11,7 @@ import java.util.function.IntUnaryOperator;
  * <p>
  * 0 is the default value.
  */
-public interface Palette extends NetworkBuffer.Writer {
+public interface Palette extends NetworkBuffer.Writer, Serializable {
     static Palette blocks() {
         return newPalette(16, 8, 4);
     }

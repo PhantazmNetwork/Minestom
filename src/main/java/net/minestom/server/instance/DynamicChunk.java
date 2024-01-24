@@ -40,7 +40,7 @@ import static net.minestom.server.utils.chunk.ChunkUtils.toSectionRelativeCoordi
  */
 public class DynamicChunk extends Chunk {
 
-    private List<Section> sections;
+    private Section[] sections;
 
     // Key = ChunkUtils#getBlockIndex
     protected final Int2ObjectOpenHashMap<Block> entries = new Int2ObjectOpenHashMap<>(0);
@@ -54,7 +54,12 @@ public class DynamicChunk extends Chunk {
         super(instance, chunkX, chunkZ, true);
         var sectionsTemp = new Section[maxSection - minSection];
         Arrays.setAll(sectionsTemp, value -> new Section());
-        this.sections = List.of(sectionsTemp);
+        this.sections = sectionsTemp;
+    }
+
+    public DynamicChunk(@NotNull Instance instance, int chunkX, int chunkZ, @NotNull Section[] sections) {
+        super(instance, chunkX, chunkZ, true);
+        this.sections = sections;
     }
 
     @Override
@@ -108,12 +113,22 @@ public class DynamicChunk extends Chunk {
 
     @Override
     public @NotNull List<Section> getSections() {
-        return sections;
+        return Collections.unmodifiableList(Arrays.asList(sections));
     }
 
     @Override
     public @NotNull Section getSection(int section) {
-        return sections.get(section - minSection);
+        return sections[section - minSection];
+    }
+
+    @Override
+    public @NotNull Section[] sectionCopy() {
+        Section[] newSections = new Section[sections.length];
+        for (int i = 0; i < sections.length; i++) {
+            newSections[i] = sections[i].clone();
+        }
+
+        return newSections;
     }
 
     @Override
@@ -199,7 +214,7 @@ public class DynamicChunk extends Chunk {
     @Override
     public @NotNull DynamicChunk copy(@NotNull Instance instance, int chunkX, int chunkZ) {
         DynamicChunk dynamicChunk = new DynamicChunk(instance, chunkX, chunkZ);
-        dynamicChunk.sections = sections.stream().map(Section::clone).toList();
+        dynamicChunk.sections = sectionCopy();
         dynamicChunk.entries.putAll(entries);
         return dynamicChunk;
     }
@@ -285,9 +300,8 @@ public class DynamicChunk extends Chunk {
 
     @Override
     public @NotNull ChunkSnapshot updateSnapshot(@NotNull SnapshotUpdater updater) {
-        Section[] clonedSections = new Section[sections.size()];
-        for (int i = 0; i < clonedSections.length; i++)
-            clonedSections[i] = sections.get(i).clone();
+        Section[] clonedSections = sectionCopy();
+
         var entities = instance.getEntityTracker().chunkEntities(chunkX, chunkZ, EntityTracker.Target.ENTITIES);
         final int[] entityIds = ArrayUtils.mapToIntArray(entities, Entity::getEntityId);
         return new SnapshotImpl.Chunk(minSection, chunkX, chunkZ,

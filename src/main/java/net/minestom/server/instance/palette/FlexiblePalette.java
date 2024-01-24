@@ -7,6 +7,7 @@ import net.minestom.server.network.NetworkBuffer;
 import net.minestom.server.utils.MathUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntUnaryOperator;
@@ -17,6 +18,9 @@ import static net.minestom.server.network.NetworkBuffer.*;
  * Palette able to take any value anywhere. May consume more memory than required.
  */
 final class FlexiblePalette implements SpecializedPalette, Cloneable {
+    @Serial
+    private static final long serialVersionUID = 2707587426254298514L;
+
     private static final ThreadLocal<int[]> WRITE_CACHE = ThreadLocal.withInitial(() -> new int[4096]);
 
     // Specific to this palette type

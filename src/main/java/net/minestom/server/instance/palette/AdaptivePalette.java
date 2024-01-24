@@ -6,12 +6,16 @@ import net.minestom.server.network.NetworkBuffer;
 import net.minestom.server.utils.MathUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serial;
 import java.util.function.IntUnaryOperator;
 
 /**
  * Palette that switches between its backend based on the use case.
  */
 final class AdaptivePalette implements Palette, Cloneable {
+    @Serial
+    private static final long serialVersionUID = -4654820869402186665L;
+
     final byte dimension, defaultBitsPerEntry, maxBitsPerEntry;
     SpecializedPalette palette;
 

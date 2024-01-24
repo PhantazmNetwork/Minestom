@@ -87,6 +87,8 @@ public abstract class Chunk implements Block.Getter, Block.Setter, Biome.Getter,
 
     public abstract @NotNull Section getSection(int section);
 
+    public abstract @NotNull Section[] sectionCopy();
+
     public @NotNull Section getSectionAt(int blockY) {
         return getSection(ChunkUtils.getChunkCoordinate(blockY));
     }
