@@ -490,7 +490,7 @@ public class InstanceContainer extends Instance {
      * @return an {@link InstanceContainer} with the exact same chunks as 'this'
      * @see #getSrcInstance() to retrieve the "creation source" of the copied instance
      */
-    public synchronized @NotNull InstanceContainer copy() {
+    public @NotNull InstanceContainer copy() {
         return copyInternal();
     }
 
