@@ -37,8 +37,23 @@ public final class ThreadDispatcher<P> {
         this.threads.forEach(Thread::start);
     }
 
+    private ThreadDispatcher(ThreadProvider<P> provider, String baseName, int threadCount) {
+        this.provider = provider;
+        TickThread[] threads = new TickThread[threadCount];
+        Arrays.setAll(threads, index -> {
+            return new TickThread(baseName + "-" + index);
+        });
+        this.threads = List.of(threads);
+        this.threads.forEach(Thread::start);
+    }
+
     public static <P> @NotNull ThreadDispatcher<P> of(@NotNull ThreadProvider<P> provider, int threadCount) {
         return new ThreadDispatcher<>(provider, threadCount);
+    }
+
+    public static <P> @NotNull ThreadDispatcher<P> of(@NotNull ThreadProvider<P> provider, @NotNull String baseName,
+                                                      int threadCount) {
+        return new ThreadDispatcher<>(provider, baseName, threadCount);
     }
 
     public static <P> @NotNull ThreadDispatcher<P> singleThread() {

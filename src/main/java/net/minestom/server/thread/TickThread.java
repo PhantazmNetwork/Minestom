@@ -32,6 +32,10 @@ public final class TickThread extends MinestomThread {
         super(MinecraftServer.THREAD_NAME_TICK + "-" + number);
     }
 
+    public TickThread(@NotNull String name) {
+        super(name);
+    }
+
     @Override
     public void run() {
         LockSupport.park(this);
