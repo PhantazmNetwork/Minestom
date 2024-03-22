@@ -1,10 +1,6 @@
 package net.minestom.server.entity.player;
 
 import net.minestom.server.MinecraftServer;
-import net.minestom.testing.Collector;
-import net.minestom.testing.Env;
-import net.minestom.testing.EnvTest;
-import net.minestom.testing.TestConnection;
 import net.minestom.server.coordinate.Pos;
 import net.minestom.server.coordinate.Vec;
 import net.minestom.server.entity.Player;
@@ -16,6 +12,10 @@ import net.minestom.server.network.packet.server.play.ChunkDataPacket;
 import net.minestom.server.network.packet.server.play.EntityPositionPacket;
 import net.minestom.server.utils.MathUtils;
 import net.minestom.server.utils.chunk.ChunkUtils;
+import net.minestom.testing.Collector;
+import net.minestom.testing.Env;
+import net.minestom.testing.EnvTest;
+import net.minestom.testing.TestConnection;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 

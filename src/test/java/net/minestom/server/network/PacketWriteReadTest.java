@@ -1,7 +1,6 @@
 package net.minestom.server.network;
 
 import com.google.gson.JsonObject;
-
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.minestom.server.coordinate.Vec;

@@ -8,7 +8,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
 import org.junit.jupiter.api.Test;
 
-import java.util.UUID;
 import java.util.*;
 
 import static net.minestom.server.network.NetworkBuffer.*;
