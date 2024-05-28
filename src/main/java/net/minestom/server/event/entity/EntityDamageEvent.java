@@ -10,22 +10,20 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Called with {@link LivingEntity#damage(Damage, boolean)}.
+ * Called with {@link LivingEntity#damage(Damage)}.
  */
 public class EntityDamageEvent implements EntityInstanceEvent, CancellableEvent {
 
     private final Entity entity;
     private final Damage damage;
-    private final float actualDamage;
     private SoundEvent sound;
     private boolean animation = true;
 
     private boolean cancelled;
 
-    public EntityDamageEvent(@NotNull LivingEntity entity, @NotNull Damage damage, float actualDamage, @Nullable SoundEvent sound) {
+    public EntityDamageEvent(@NotNull LivingEntity entity, @NotNull Damage damage, @Nullable SoundEvent sound) {
         this.entity = entity;
         this.damage = damage;
-        this.actualDamage = actualDamage;
         this.sound = sound;
     }
 
@@ -43,10 +41,6 @@ public class EntityDamageEvent implements EntityInstanceEvent, CancellableEvent 
     @NotNull
     public Damage getDamage() {
         return damage;
-    }
-
-    public float getActualAmount() {
-        return actualDamage;
     }
 
     /**

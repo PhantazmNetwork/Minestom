@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Represents a type of damage, required when calling {@link LivingEntity#damage(Damage, boolean)}
+ * Represents a type of damage, required when calling {@link LivingEntity#damage(Damage)}
  * and retrieved in {@link net.minestom.server.event.entity.EntityDamageEvent}.
  * <p>
  * This class can be extended if you need to include custom fields and/or methods.
@@ -29,7 +29,7 @@ public class Damage implements Taggable {
     /**
      * Creates a new damage type.
      *
-     * @param type the type of this damage
+     * @param type   the type of this damage
      * @param amount amount of damage
      */
     public Damage(@NotNull DamageType type, @Nullable Entity source, @Nullable Entity attacker, @Nullable Point sourcePosition, float amount) {
@@ -98,7 +98,7 @@ public class Damage implements Taggable {
      *
      * @param shooter    the shooter
      * @param projectile the actual projectile
-     * @param amount amount of damage
+     * @param amount     amount of damage
      * @return a new {@link EntityProjectileDamage}
      */
     public static @NotNull Damage fromProjectile(@Nullable Entity shooter, @NotNull Entity projectile, float amount) {

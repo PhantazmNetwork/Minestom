@@ -421,13 +421,13 @@ public class Player extends LivingEntity implements CommandSender, Localizable, 
     }
 
     @Override
-    public boolean damage(@NotNull Damage damage, boolean bypassArmor) {
+    public boolean damage(@NotNull Damage damage) {
         if (MinecraftServer.currentTick() <= nextHurtTick) {
             return false;
         }
 
         nextHurtTick = MinecraftServer.currentTick() + defaultInvulnerabilityTicks;
-        return super.damage(damage, bypassArmor);
+        return super.damage(damage);
     }
 
     @Override

@@ -347,16 +347,15 @@ public class LivingEntity extends Entity implements EquipmentHandler {
      * Damages the entity by a value, the type of the damage also has to be specified. This may or may not take armor
      * into account.
      *
-     * @param damageType  the damage type
-     * @param value       the amount of damage
-     * @param bypassArmor whether to consider armor in the final damage calculation
+     * @param damageType the damage type
+     * @param value      the amount of damage
      * @return true if damage has been applied, false if it didn't
      */
-    public boolean damage(@NotNull DamageType damageType, float value, boolean bypassArmor) {
-        return damage(new Damage(damageType, null, null, null, value), bypassArmor);
+    public boolean damage(@NotNull DamageType damageType, float value) {
+        return damage(new Damage(damageType, null, null, null, value));
     }
 
-    public boolean damage(@NotNull Damage damage, boolean bypassArmor) {
+    public boolean damage(@NotNull Damage damage) {
         if (isDead())
             return false;
         if (isInvulnerable() || isImmune(damage.getType())) {
@@ -364,7 +363,7 @@ public class LivingEntity extends Entity implements EquipmentHandler {
         }
 
         EntityDamageEvent entityDamageEvent = new EntityDamageEvent(this, damage,
-                computeActualDamage(damage.getAmount(), bypassArmor), damage.getSound(this));
+                damage.getSound(this));
         EventDispatcher.callCancellable(entityDamageEvent, () -> {
             // Set the last damage type since the event is not cancelled
             this.lastDamageSource = entityDamageEvent.getDamage();
@@ -377,7 +376,7 @@ public class LivingEntity extends Entity implements EquipmentHandler {
                         damage.getSource() == null ? 0 : damage.getSource().getEntityId() + 1, damage.getSourcePosition()));
             }
 
-            float actualDamage = entityDamageEvent.getActualAmount();
+            float actualDamage = damage.getAmount();
             if (this instanceof Player player) {
                 if (damage.getAttacker() != null) {
                     double dx = damage.getAttacker().getPosition().x() - position.x();
@@ -418,32 +417,6 @@ public class LivingEntity extends Entity implements EquipmentHandler {
         });
 
         return !entityDamageEvent.isCancelled();
-    }
-
-    public float computeActualDamage(float incoming, boolean bypassArmor) {
-        float remainingDamage;
-        if (!bypassArmor) {
-            float defensePoints = getAttributeValue(Attribute.ARMOR);
-            float toughness = getAttributeValue(Attribute.ARMOR_TOUGHNESS);
-
-            remainingDamage = incoming *
-                    (1F - (Math.max(defensePoints / 5F, defensePoints - ((4F * incoming) / (toughness + 8F))) / 25F));
-        } else {
-            remainingDamage = incoming;
-        }
-
-        return remainingDamage;
-    }
-
-    /**
-     * Overload of {@link LivingEntity#damage(DamageType, float, boolean)} that bypasses armor.
-     *
-     * @param type  the damage type
-     * @param value the amount of damage
-     * @return true if damage has been applied, false if it didn't
-     */
-    public boolean damage(@NotNull DamageType type, float value) {
-        return damage(type, value, true);
     }
 
     /**
