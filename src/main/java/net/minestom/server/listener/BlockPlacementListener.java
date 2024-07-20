@@ -24,12 +24,8 @@ import net.minestom.server.item.Material;
 import net.minestom.server.network.packet.client.play.ClientPlayerBlockPlacementPacket;
 import net.minestom.server.network.packet.server.play.AcknowledgeBlockChangePacket;
 import net.minestom.server.network.packet.server.play.BlockChangePacket;
-import net.minestom.server.network.packet.server.play.BlockEntityDataPacket;
-import net.minestom.server.registry.Registry;
-import net.minestom.server.utils.block.BlockUtils;
 import net.minestom.server.utils.chunk.ChunkUtils;
 import net.minestom.server.utils.validate.Check;
-import org.jglrxavpok.hephaistos.nbt.NBTCompound;
 
 public class BlockPlacementListener {
     private static final BlockManager BLOCK_MANAGER = MinecraftServer.getBlockManager();
@@ -102,11 +98,6 @@ public class BlockPlacementListener {
             // after rapid invalid block placements
             final Block block = instance.getBlock(placementPosition);
             player.sendPacket(new BlockChangePacket(placementPosition, block));
-            Registry.BlockEntry entry = block.registry();
-            if (entry.isBlockEntity()) {
-                NBTCompound nbt = BlockUtils.extractClientNbt(block);
-                player.sendPacket(new BlockEntityDataPacket(placementPosition, entry.blockEntityId(), nbt));
-            }
             return;
         }
 
