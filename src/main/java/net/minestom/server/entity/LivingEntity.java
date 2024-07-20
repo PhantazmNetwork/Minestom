@@ -364,23 +364,24 @@ public class LivingEntity extends Entity implements EquipmentHandler {
 
         EntityDamageEvent entityDamageEvent = new EntityDamageEvent(this, damage,
                 damage.getSound(this));
+        final Damage finalDamage = entityDamageEvent.getDamage();
         EventDispatcher.callCancellable(entityDamageEvent, () -> {
             // Set the last damage type since the event is not cancelled
-            this.lastDamageSource = entityDamageEvent.getDamage();
+            this.lastDamageSource = finalDamage;
 
             this.lastEntityDamageTime = System.currentTimeMillis();
 
             if (entityDamageEvent.shouldAnimate()) {
-                sendPacketToViewersAndSelf(new DamageEventPacket(getEntityId(), damage.getType().id(),
-                        damage.getAttacker() == null ? 0 : damage.getAttacker().getEntityId() + 1,
-                        damage.getSource() == null ? 0 : damage.getSource().getEntityId() + 1, damage.getSourcePosition()));
+                sendPacketToViewersAndSelf(new DamageEventPacket(getEntityId(), finalDamage.getType().id(),
+                        finalDamage.getAttacker() == null ? 0 : finalDamage.getAttacker().getEntityId() + 1,
+                        finalDamage.getSource() == null ? 0 : finalDamage.getSource().getEntityId() + 1, finalDamage.getSourcePosition()));
             }
 
-            float actualDamage = damage.getAmount();
+            float actualDamage = finalDamage.getAmount();
             if (this instanceof Player player) {
-                if (damage.getAttacker() != null) {
-                    double dx = damage.getAttacker().getPosition().x() - position.x();
-                    double dz = damage.getAttacker().getPosition().z() - position.z();
+                if (finalDamage.getAttacker() != null) {
+                    double dx = finalDamage.getAttacker().getPosition().x() - position.x();
+                    double dz = finalDamage.getAttacker().getPosition().z() - position.z();
                     double dYaw = Math.toDegrees(Math.atan2(dz, dx)) - position.yaw();
                     player.sendScreenTilt((float) dYaw);
                 }
