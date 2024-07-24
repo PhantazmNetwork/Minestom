@@ -110,6 +110,11 @@ public final class AttributeInstance {
         return cachedValue;
     }
 
+    public void clearModifiers() {
+        this.modifiers.clear();
+        refreshCachedValue();
+    }
+
     /**
      * Recalculate the value of this attribute instance using the modifiers.
      */
