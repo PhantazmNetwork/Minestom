@@ -32,10 +32,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.time.temporal.TemporalUnit;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LivingEntity extends Entity implements EquipmentHandler {
@@ -111,6 +108,10 @@ public class LivingEntity extends Entity implements EquipmentHandler {
         this.chestplate = ItemStack.AIR;
         this.leggings = ItemStack.AIR;
         this.boots = ItemStack.AIR;
+    }
+
+    public @NotNull Collection<AttributeInstance> attributeInstances() {
+        return attributeModifiers.values();
     }
 
     @NotNull
