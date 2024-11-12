@@ -32,6 +32,8 @@ final class Serializers {
             component -> NBT.String(GsonComponentSerializer.gson().serialize(component)));
     static final Entry<BannerMeta.Pattern, NBTCompound> PATTERN = new Entry<>(NBTType.TAG_Compound, BannerMeta.Pattern::fromCompound, BannerMeta.Pattern::asCompound);
 
+    static final Entry<?, ?> EMPTY = new Entry<>(null, nbt -> null, object -> null);
+
     static <T> Entry<T, NBTCompound> fromTagSerializer(TagSerializer<T> serializer) {
         return new Serializers.Entry<>(NBTType.TAG_Compound,
                 (NBTCompound compound) -> {

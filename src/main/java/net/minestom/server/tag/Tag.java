@@ -324,4 +324,11 @@ public class Tag<T> {
     public static <T extends Record> @NotNull Tag<T> View(@NotNull Class<T> type) {
         return View(TagRecord.serializer(type));
     }
+
+    // remove after update
+    @SuppressWarnings("unchecked")
+    @ApiStatus.Experimental
+    public static <T> @NotNull Tag<T> Transient(@NotNull String key) {
+        return tag(key, (Serializers.Entry<T, ? extends NBT>) Serializers.EMPTY);
+    }
 }
