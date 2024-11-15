@@ -3,6 +3,7 @@ package net.minestom.server.tag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.Arrays;
 import java.util.function.Consumer;
@@ -94,7 +95,23 @@ sealed interface StaticIntMap<T> permits StaticIntMap.Array, StaticIntMap.Hash {
         }
     }
 
+    /**
+     * A {@link StaticIntMap} implementation based off of an open-addressed quadratic probing hashtable.
+     * <p>
+     * Writes (i.e. calls to {@code put}, {@code remove}, or {@code clear} must be synchronized externally. Reads,
+     * however, do not require synchronization -- any number of reads can occur concurrently alongside a write.
+     *
+     * @param <T> the type of object stored in the map
+     */
     final class Hash<T> implements StaticIntMap<T> {
+        private static final VarHandle IAA;
+        private static final VarHandle OAA;
+
+        static {
+            IAA = MethodHandles.arrayElementVarHandle(int[].class);
+            OAA = MethodHandles.arrayElementVarHandle(Object[].class);
+        }
+
         private static final Entries EMPTY_ENTRIES = new Entries(new int[0], new Object[0]);
         private static final float LOAD_FACTOR = 0.75F;
 
@@ -106,8 +123,9 @@ sealed interface StaticIntMap<T> permits StaticIntMap.Array, StaticIntMap.Hash {
                 final Object[] newValues = new Object[keys.length];
 
                 for (int i = 0; i < newKeys.length; i++) {
-                    final int k = keys[i];
-                    final Object v = values[i];
+                    final int k = (int) IAA.getOpaque(keys, i);
+                    final Object v = (Object) OAA.getOpaque(values, i);
+                    VarHandle.loadLoadFence();
 
                     newKeys[i] = k;
                     if (k == -1 || k > 0) newValues[i] = v;
@@ -117,7 +135,18 @@ sealed interface StaticIntMap<T> permits StaticIntMap.Array, StaticIntMap.Hash {
             }
         }
 
+        /**
+         * Re-assigned whenever rehashing. {@code keys} and {@code values} array elements should only be accessed
+         * through VarHandle static fields {@code IAA} and {@code OAA}, respectively, using opaque mode or stronger.
+         */
         private volatile Entries entries;
+
+        /**
+         * Number of used elements in the table. Only used for determining when a rehash is needed.
+         * <p>
+         * It is not necessary to mark this variable as {@code volatile}: it is only accessed through write methods
+         * {@code write}, {@code remove}, and {@code clear}. These methods must be synchronized externally.
+         */
         private int size;
 
         private Hash(Entries entries) {
@@ -129,6 +158,14 @@ sealed interface StaticIntMap<T> permits StaticIntMap.Array, StaticIntMap.Hash {
             this(EMPTY_ENTRIES);
         }
 
+        /**
+         * Used to compute the actual size of the map, based on the keys array.
+         * <p>
+         * Should ONLY be used on non-shared memory, i.e. the array must not be written to by another thread!
+         *
+         * @param k the key array
+         * @return the size of the array
+         */
         private static int computeSize(int[] k) {
             int size = 0;
             for (int key : k) {
@@ -147,7 +184,7 @@ sealed interface StaticIntMap<T> permits StaticIntMap.Array, StaticIntMap.Hash {
 
             for (int i = 0; i < k.length; i++) {
                 final int probeIndex = probeIndex(start, i, mask);
-                final int sample = k[probeIndex];
+                final int sample = (int) IAA.getOpaque(k, probeIndex);
 
                 if (sample == key) return probeIndex;
                 else if (sample == 0) return -1;
@@ -162,8 +199,7 @@ sealed interface StaticIntMap<T> permits StaticIntMap.Array, StaticIntMap.Hash {
 
             for (int i = 0; i < k.length; i++) {
                 final int probeIndex = probeIndex(start, i, mask);
-
-                if (k[probeIndex] == 0) return probeIndex;
+                if ((int) IAA.getOpaque(k, probeIndex) == 0) return probeIndex;
             }
 
             return -1;
@@ -176,7 +212,7 @@ sealed interface StaticIntMap<T> permits StaticIntMap.Array, StaticIntMap.Hash {
             int tombstoneIndex = -1;
             for (int i = 0; i < k.length; i++) {
                 final int probeIndex = probeIndex(start, i, mask);
-                final int sample = k[probeIndex];
+                final int sample = (int) IAA.getOpaque(k, probeIndex);
 
                 if (tombstoneIndex == -1 && sample == -2) tombstoneIndex = probeIndex;
                 else if (sample == key) return probeIndex;
@@ -196,7 +232,10 @@ sealed interface StaticIntMap<T> permits StaticIntMap.Array, StaticIntMap.Hash {
             final T[] newV = (T[]) new Object[newSize];
 
             for (int i = 0; i < k.length; i++) {
-                final int oldKey = k[i];
+                final int oldKey = (int) IAA.getOpaque(k, i);
+                final T oldValue = (T) ((Object) OAA.getOpaque(v, i));
+                VarHandle.loadLoadFence();
+
                 if (oldKey == 0 || oldKey == -2) continue;
 
                 final int newIndex = probeEmpty(oldKey, newK);
@@ -205,7 +244,7 @@ sealed interface StaticIntMap<T> permits StaticIntMap.Array, StaticIntMap.Hash {
                 assert newIndex != -1 : "Could not find space for rehashed element";
 
                 newK[newIndex] = oldKey;
-                newV[newIndex] = v[i];
+                newV[newIndex] = oldValue;
             }
 
             this.entries = new Entries(newK, newV);
@@ -224,7 +263,7 @@ sealed interface StaticIntMap<T> permits StaticIntMap.Array, StaticIntMap.Hash {
             final int index = probeKey(key, k);
             if (index == -1) return null;
 
-            return v[index];
+            return (T) ((Object) OAA.getOpaque(v, index));
         }
 
         @SuppressWarnings("unchecked")
@@ -235,9 +274,12 @@ sealed interface StaticIntMap<T> permits StaticIntMap.Array, StaticIntMap.Hash {
             final T[] v = (T[]) entries.values;
 
             for (int i = 0; i < k.length; i++) {
-                final int index = k[i];
-                if (index == 0 || index == -2) continue;
-                consumer.accept(v[i]);
+                final int key = (int) IAA.getOpaque(k, i);
+                final T value = (T) ((Object) OAA.getOpaque(v, i));
+                VarHandle.loadLoadFence();
+
+                if (key == 0 || key == -2) continue;
+                consumer.accept(value);
             }
         }
 
@@ -271,11 +313,12 @@ sealed interface StaticIntMap<T> permits StaticIntMap.Array, StaticIntMap.Hash {
 
             final int index = probePut(key, k);
             if (index != -1) {
-                v[index] = value;
-                VarHandle.storeStoreFence(); // new value must appear before the key is set
-                final int oldKey = k[index];
+                OAA.setOpaque(v, index, value);
+                VarHandle.storeStoreFence();
+
+                final int oldKey = (int) IAA.getOpaque(k, index);
                 if (oldKey == 0 || oldKey == -2) {
-                    k[index] = key;
+                    IAA.setOpaque(k, index, key);
                     this.size++;
                 }
 
@@ -300,9 +343,9 @@ sealed interface StaticIntMap<T> permits StaticIntMap.Array, StaticIntMap.Hash {
             final int index = probeKey(key, k);
             if (index == -1) return;
 
-            k[index] = -2;
-            VarHandle.storeStoreFence(); // key must indicate "no value" before the actual value is nulled
-            v[index] = null;
+            IAA.setOpaque(k, index, -2);
+            VarHandle.storeStoreFence();
+            OAA.setOpaque(v, index, null);
 
             if (--this.size == 0) this.entries = EMPTY_ENTRIES;
             else if (this.size + 1 <= (int) ((1F - LOAD_FACTOR) * k.length)) rehash(k.length >> 1);
