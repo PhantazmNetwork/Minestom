@@ -365,8 +365,9 @@ public class LivingEntity extends Entity implements EquipmentHandler {
 
         EntityDamageEvent entityDamageEvent = new EntityDamageEvent(this, damage,
                 damage.getSound(this));
-        final Damage finalDamage = entityDamageEvent.getDamage();
         EventDispatcher.callCancellable(entityDamageEvent, () -> {
+            final Damage finalDamage = entityDamageEvent.getDamage();
+
             // Set the last damage type since the event is not cancelled
             this.lastDamageSource = finalDamage;
 
